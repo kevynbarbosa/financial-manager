@@ -76,4 +76,28 @@ class User extends Authenticatable
 
         $this->roles()->detach($role);
     }
+
+    public function hasPermission(string $permission): bool
+    {
+        return $this->roles()->whereHas('permissions', function ($query) use ($permission) {
+            $query->where('name', $permission);
+        })->exists();
+    }
+
+    public function getPermissions(): \Illuminate\Support\Collection
+    {
+        return $this->roles()->with('permissions')->get()
+            ->pluck('permissions')
+            ->flatten()
+            ->unique('id')
+            ->pluck('name');
+    }
+
+    public function getAllPermissions(): \Illuminate\Support\Collection
+    {
+        return $this->roles()->with('permissions')->get()
+            ->pluck('permissions')
+            ->flatten()
+            ->unique('id');
+    }
 }

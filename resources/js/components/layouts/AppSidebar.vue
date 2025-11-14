@@ -1,18 +1,25 @@
 <script setup lang="ts">
+import AppLogo from '@/components/common/AppLogo.vue';
+import ThemeToggle from '@/components/common/ThemeToggle.vue';
 import NavFooter from '@/components/layouts/NavFooter.vue';
 import NavMain from '@/components/layouts/NavMain.vue';
 import NavUser from '@/components/layouts/NavUser.vue';
-import ThemeToggle from '@/components/common/ThemeToggle.vue';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator } from '@/components/ui/sidebar';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarSeparator,
+} from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { index as peopleIndex } from '@/routes/people';
 import { index as rolesIndex } from '@/routes/roles';
-import { index as solicitationsIndex } from '@/routes/solicitations';
 import { index as usersIndex } from '@/routes/users';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Database, FileText, Folder, Inbox, LayoutGrid, ShieldUser, Users } from 'lucide-vue-next';
-import AppLogo from '@/components/common/AppLogo.vue';
+import { BookOpen, Folder, LayoutGrid, ShieldUser, Users } from 'lucide-vue-next';
 
 const mainNavItems: NavItem[] = [
     {
@@ -31,24 +38,6 @@ const mainNavItems: NavItem[] = [
         title: 'Perfis & Permissões',
         href: rolesIndex.url(),
         icon: ShieldUser,
-    },
-
-    {
-        title: 'Solicitações',
-        href: solicitationsIndex.url(),
-        icon: FileText,
-    },
-
-    {
-        title: 'Base Ativa',
-        href: peopleIndex.url(),
-        icon: Database,
-    },
-
-    {
-        title: 'Caixa de entrada',
-        href: dashboard(),
-        icon: Inbox,
     },
 ];
 
