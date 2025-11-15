@@ -55,4 +55,4 @@ jobs:
         env:
           DB_CONNECTION: sqlite
           DB_DATABASE: database/testing.sqlite
-        run: ./vendor/bin/pest
+        run: ./vendor/bin/pest -vvv
