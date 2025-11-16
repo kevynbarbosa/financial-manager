@@ -11,6 +11,11 @@ export type BankAccount = {
     };
 };
 
+export type TransactionTag = {
+    id: number;
+    name: string;
+};
+
 export type BankTransaction = {
     id: number;
     description: string;
@@ -18,6 +23,7 @@ export type BankTransaction = {
     type: 'credit' | 'debit';
     occurred_at: string | null;
     category?: string | null;
+    tags: TransactionTag[];
     account: {
         id: number;
         name: string;
@@ -46,4 +52,20 @@ export type PaginatedResource<T> = {
     first_page_url: string;
     last_page_url: string;
     path: string;
+};
+
+export type TagReportEntry = {
+    id: number;
+    name: string;
+    credit: number;
+    debit: number;
+    net: number;
+};
+
+export type TagReports = {
+    totals: {
+        credit: number;
+        debit: number;
+    };
+    breakdown: TagReportEntry[];
 };

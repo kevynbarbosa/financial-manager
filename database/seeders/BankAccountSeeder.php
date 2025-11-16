@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -37,8 +38,20 @@ class BankAccountSeeder extends Seeder
             ],
         ];
 
+        $tags = Tag::query()
+            ->where('user_id', $user->id)
+            ->get();
+
+        if ($tags->isEmpty()) {
+            $defaultTags = ['Essenciais', 'Investimentos', 'Lazer', 'Impostos', 'Transferências', 'Receitas'];
+            $tags = collect($defaultTags)->map(fn (string $name) => Tag::query()->firstOrCreate([
+                'user_id' => $user->id,
+                'name' => $name,
+            ]));
+        }
+
         foreach ($accounts as $accountData) {
-            BankAccount::factory()
+            $account = BankAccount::factory()
                 ->for($user)
                 ->state($accountData)
                 ->has(
@@ -50,6 +63,16 @@ class BankAccountSeeder extends Seeder
                     'transactions'
                 )
                 ->create();
+
+            $account->transactions->each(function (BankTransaction $transaction) use ($tags) {
+                if ($tags->isEmpty() || !random_int(0, 1)) {
+                    return;
+                }
+
+                $tagCount = min(3, $tags->count());
+                $selected = $tags->shuffle()->take(random_int(1, $tagCount))->pluck('id')->all();
+                $transaction->tags()->sync($selected);
+            });
         }
     }
 }

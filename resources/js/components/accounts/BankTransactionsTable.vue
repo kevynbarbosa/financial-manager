@@ -242,6 +242,7 @@ const tableIsEmpty = computed(() => !props.transactions.data.length && !isLoadin
                             <TableHead>Conta</TableHead>
                             <TableHead>Descrição</TableHead>
                             <TableHead>Categoria</TableHead>
+                            <TableHead>Tags</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead class="text-right">Valor</TableHead>
                             <TableHead>Data</TableHead>
@@ -260,6 +261,18 @@ const tableIsEmpty = computed(() => !props.transactions.data.length && !isLoadin
                             </TableCell>
                             <TableCell>
                                 <span class="text-sm text-muted-foreground">{{ transaction.category || '-' }}</span>
+                            </TableCell>
+                            <TableCell>
+                                <div class="flex flex-wrap gap-1">
+                                    <span
+                                        v-for="tag in transaction.tags"
+                                        :key="tag.id"
+                                        class="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground"
+                                    >
+                                        {{ tag.name }}
+                                    </span>
+                                    <span v-if="!transaction.tags.length" class="text-xs text-muted-foreground">Sem tags</span>
+                                </div>
                             </TableCell>
                             <TableCell>
                                 <span
@@ -288,7 +301,7 @@ const tableIsEmpty = computed(() => !props.transactions.data.length && !isLoadin
                     </TableBody>
                     <TableBody v-else>
                         <TableRow>
-                            <TableCell class="text-center text-sm text-muted-foreground" colspan="6">
+                            <TableCell class="text-center text-sm text-muted-foreground" colspan="7">
                                 Nenhuma transação encontrada para os filtros selecionados.
                             </TableCell>
                         </TableRow>

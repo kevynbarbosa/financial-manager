@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Models\Tag;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -48,7 +50,10 @@ class BankAccountController extends Controller
             ->get();
 
         $transactions = BankTransaction::query()
-            ->with('account:id,name,institution,user_id')
+            ->with([
+                'account:id,name,institution,user_id',
+                'tags:id,name',
+            ])
             ->whereHas('account', function (Builder $query) use ($user) {
                 $query->where('user_id', $user->id);
             })
@@ -83,6 +88,10 @@ class BankAccountController extends Controller
                         'name' => $transaction->account->name,
                         'institution' => $transaction->account->institution,
                     ],
+                    'tags' => $transaction->tags->map(fn (Tag $tag) => [
+                        'id' => $tag->id,
+                        'name' => $tag->name,
+                    ])->values()->all(),
                 ];
             });
 
@@ -111,11 +120,62 @@ class BankAccountController extends Controller
             ],
         ];
 
+        $tagReports = $this->buildTagReports($user);
+
         return Inertia::render('accounts/Index', [
             'accounts' => $accountsResource->values(),
             'summary' => $summary,
             'transactions' => $transactions,
             'transactionFilters' => $transactionFilters,
+            'tagReports' => $tagReports,
         ]);
+    }
+
+    protected function buildTagReports(User $user): array
+    {
+        $tagSummary = Tag::query()
+            ->select('tags.id', 'tags.name')
+            ->selectRaw("SUM(CASE WHEN bank_transactions.type = 'credit' THEN bank_transactions.amount ELSE 0 END) as credit_total")
+            ->selectRaw("SUM(CASE WHEN bank_transactions.type = 'debit' THEN bank_transactions.amount ELSE 0 END) as debit_total")
+            ->join('bank_transaction_tag', 'tags.id', '=', 'bank_transaction_tag.tag_id')
+            ->join('bank_transactions', 'bank_transaction_tag.bank_transaction_id', '=', 'bank_transactions.id')
+            ->where('tags.user_id', $user->id)
+            ->groupBy('tags.id', 'tags.name')
+            ->get();
+
+        $breakdown = $tagSummary
+            ->map(function ($tag) {
+                $credit = (float) $tag->credit_total;
+                $debit = (float) $tag->debit_total;
+
+                return [
+                    'id' => $tag->id,
+                    'name' => $tag->name,
+                    'credit' => $credit,
+                    'debit' => $debit,
+                    'net' => $credit - $debit,
+                ];
+            })
+            ->sortByDesc(fn (array $tag) => $tag['credit'] + $tag['debit'])
+            ->values();
+
+        $totals = BankTransaction::query()
+            ->selectRaw("SUM(CASE WHEN type = 'credit' THEN amount ELSE 0 END) as credit_total")
+            ->selectRaw("SUM(CASE WHEN type = 'debit' THEN amount ELSE 0 END) as debit_total")
+            ->whereHas('account', function (Builder $query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->whereHas('tags', function (Builder $query) use ($user) {
+                $query->where('tags.user_id', $user->id);
+            })
+            ->first();
+
+        return [
+            'totals' => [
+                'credit' => (float) ($totals->credit_total ?? 0),
+                'debit' => (float) ($totals->debit_total ?? 0),
+            ],
+            'breakdown' => $breakdown->all(),
+        ];
     }
 }

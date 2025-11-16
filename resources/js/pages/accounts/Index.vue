@@ -18,6 +18,7 @@ export default {
 <script setup lang="ts">
 import BankAccountCard from '@/components/accounts/BankAccountCard.vue';
 import BankTransactionsTable from '@/components/accounts/BankTransactionsTable.vue';
+import TagBreakdownCard from '@/components/accounts/TagBreakdownCard.vue';
 import ContainerDefault from '@/components/layouts/ContainerDefault.vue';
 import Button from '@/components/ui/button/Button.vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,7 +26,7 @@ import { formatCurrency } from '@/pages/accounts/utils';
 import { Head } from '@inertiajs/vue3';
 import { ArrowDownRight, ArrowUpRight, FileUp } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-import type { BankAccount, BankTransaction, PaginatedResource, TransactionFilters } from '@/types/accounts';
+import type { BankAccount, BankTransaction, PaginatedResource, TagReports, TransactionFilters } from '@/types/accounts';
 
 const props = withDefaults(
     defineProps<{
@@ -41,6 +42,7 @@ const props = withDefaults(
         };
         transactions: PaginatedResource<BankTransaction>;
         transactionFilters: TransactionFilters;
+        tagReports: TagReports;
     }>(),
     {
         accounts: () => [],
@@ -73,6 +75,13 @@ const props = withDefaults(
             account: null,
             start_date: '',
             end_date: '',
+        }),
+        tagReports: () => ({
+            totals: {
+                credit: 0,
+                debit: 0,
+            },
+            breakdown: [],
         }),
     }
 );
@@ -182,6 +191,8 @@ const handleOfxSelected = (event: Event) => {
                 </div>
             </CardContent>
         </Card>
+
+        <TagBreakdownCard :reports="tagReports" />
 
         <BankTransactionsTable
             :transactions="transactions"
