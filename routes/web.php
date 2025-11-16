@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BankAccountController;
+use App\Http\Controllers\BankTransactionTagController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -17,6 +18,8 @@ Route::get('dashboard', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('accounts', [BankAccountController::class, 'index'])->name('accounts.index');
+    Route::get('transactions/{transaction}/tags', [BankTransactionTagController::class, 'edit'])->name('transactions.tags.edit');
+    Route::put('transactions/{transaction}/tags', [BankTransactionTagController::class, 'update'])->name('transactions.tags.update');
 
     Route::resource('users', UserController::class);
     Route::get('users/{user}/permissions', [UserController::class, 'permissions'])->name('users.permissions');

@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatDateTime } from '@/lib/date-utils';
 import { index as accountsIndex } from '@/routes/accounts';
+import { edit as transactionTagsEdit } from '@/routes/transactions/tags';
 import { formatCurrency } from '@/pages/accounts/utils';
 import type { BankTransaction, PaginatedResource, TransactionFilters } from '@/types/accounts';
 import { router } from '@inertiajs/vue3';
-import { ArrowDownRight, ArrowUpRight, Filter } from 'lucide-vue-next';
+import { ArrowDownRight, ArrowUpRight, Filter, Tag as TagIcon } from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
 
 type AccountOption = {
@@ -148,6 +149,8 @@ const transactionCountLabel = computed(() => {
 });
 
 const tableIsEmpty = computed(() => !props.transactions.data.length && !isLoading.value);
+
+const transactionTagModalUrl = (transactionId: number) => transactionTagsEdit(transactionId).url;
 </script>
 
 <template>
@@ -246,6 +249,7 @@ const tableIsEmpty = computed(() => !props.transactions.data.length && !isLoadin
                             <TableHead>Tipo</TableHead>
                             <TableHead class="text-right">Valor</TableHead>
                             <TableHead>Data</TableHead>
+                            <TableHead class="text-right">Ações</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody v-if="!tableIsEmpty">
@@ -297,11 +301,22 @@ const tableIsEmpty = computed(() => !props.transactions.data.length && !isLoadin
                                     {{ transaction.occurred_at ? formatDateTime(transaction.occurred_at) : '-' }}
                                 </span>
                             </TableCell>
+                            <TableCell class="text-right">
+                                <ModalLink
+                                    :href="transactionTagModalUrl(transaction.id)"
+                                    as="button"
+                                    type="button"
+                                    class="inline-flex items-center justify-center gap-2 rounded-md border border-border/70 bg-background px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-70"
+                                >
+                                    <TagIcon class="h-3.5 w-3.5" />
+                                    <span>Editar tags</span>
+                                </ModalLink>
+                            </TableCell>
                         </TableRow>
                     </TableBody>
                     <TableBody v-else>
                         <TableRow>
-                            <TableCell class="text-center text-sm text-muted-foreground" colspan="7">
+                            <TableCell class="text-center text-sm text-muted-foreground" colspan="8">
                                 Nenhuma transação encontrada para os filtros selecionados.
                             </TableCell>
                         </TableRow>
