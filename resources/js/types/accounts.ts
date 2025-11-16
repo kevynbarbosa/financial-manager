@@ -10,3 +10,40 @@ export type BankAccount = {
         expense: number;
     };
 };
+
+export type BankTransaction = {
+    id: number;
+    description: string;
+    amount: number;
+    type: 'credit' | 'debit';
+    occurred_at: string | null;
+    category?: string | null;
+    account: {
+        id: number;
+        name: string;
+        institution: string | null;
+    };
+};
+
+export type TransactionFilters = {
+    search?: string;
+    type?: string;
+    account?: number | null;
+    start_date?: string;
+    end_date?: string;
+};
+
+export type PaginatedResource<T> = {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+    next_page_url: string | null;
+    prev_page_url: string | null;
+    first_page_url: string;
+    last_page_url: string;
+    path: string;
+};

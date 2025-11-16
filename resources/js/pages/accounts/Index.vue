@@ -17,16 +17,17 @@ export default {
 
 <script setup lang="ts">
 import BankAccountCard from '@/components/accounts/BankAccountCard.vue';
+import BankTransactionsTable from '@/components/accounts/BankTransactionsTable.vue';
 import ContainerDefault from '@/components/layouts/ContainerDefault.vue';
 import Button from '@/components/ui/button/Button.vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/pages/accounts/utils';
 import { Head } from '@inertiajs/vue3';
 import { ArrowDownRight, ArrowUpRight, FileUp } from 'lucide-vue-next';
-import { ref } from 'vue';
-import type { BankAccount } from '@/types/accounts';
+import { computed, ref } from 'vue';
+import type { BankAccount, BankTransaction, PaginatedResource, TransactionFilters } from '@/types/accounts';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         accounts: BankAccount[];
         summary: {
@@ -38,6 +39,8 @@ withDefaults(
                 end: string;
             };
         };
+        transactions: PaginatedResource<BankTransaction>;
+        transactionFilters: TransactionFilters;
     }>(),
     {
         accounts: () => [],
@@ -50,11 +53,39 @@ withDefaults(
                 end: '',
             },
         }),
+        transactions: () => ({
+            data: [],
+            current_page: 1,
+            last_page: 1,
+            per_page: 10,
+            total: 0,
+            from: null,
+            to: null,
+            next_page_url: null,
+            prev_page_url: null,
+            first_page_url: '',
+            last_page_url: '',
+            path: '',
+        }),
+        transactionFilters: () => ({
+            search: '',
+            type: '',
+            account: null,
+            start_date: '',
+            end_date: '',
+        }),
     }
 );
 
 const ofxInputRef = ref<HTMLInputElement | null>(null);
 const importFeedback = ref('');
+const accountFilterOptions = computed(() =>
+    props.accounts.map((account) => ({
+        id: account.id,
+        value: String(account.id),
+        label: `${account.name} • ${account.institution}`,
+    }))
+);
 
 const triggerOfxImport = () => {
     ofxInputRef.value?.click();
@@ -151,5 +182,11 @@ const handleOfxSelected = (event: Event) => {
                 </div>
             </CardContent>
         </Card>
+
+        <BankTransactionsTable
+            :transactions="transactions"
+            :filters="transactionFilters"
+            :account-options="accountFilterOptions"
+        />
     </ContainerDefault>
 </template>
