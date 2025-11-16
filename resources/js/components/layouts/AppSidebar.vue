@@ -15,13 +15,19 @@ import {
     SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as accountsIndex } from '@/routes/accounts';
 import { index as rolesIndex } from '@/routes/roles';
 import { index as usersIndex } from '@/routes/users';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, ShieldUser, Users } from 'lucide-vue-next';
+import { BookOpen, CreditCard, Folder, LayoutGrid, ShieldUser, Users } from 'lucide-vue-next';
 
 const mainNavItems: NavItem[] = [
+    {
+        title: 'Controle de Contas',
+        href: accountsIndex(),
+        icon: CreditCard,
+    },
     {
         title: 'Dashboard',
         href: dashboard(),
@@ -53,6 +59,7 @@ const footerNavItems: NavItem[] = [
         icon: BookOpen,
     },
 ];
+
 </script>
 
 <template>
