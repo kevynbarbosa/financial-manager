@@ -1,19 +1,13 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { BankAccount } from '@/types/accounts';
+import { formatCurrency } from '@/pages/accounts/utils';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
     account: BankAccount;
 }>();
-
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-});
-
-const formatCurrency = (value: number) => currencyFormatter.format(value);
 
 const incomePercent = computed(() => {
     const { income, expense } = props.account.monthlyMovements;

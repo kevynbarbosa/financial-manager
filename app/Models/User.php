@@ -5,6 +5,8 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -99,5 +101,20 @@ class User extends Authenticatable
             ->pluck('permissions')
             ->flatten()
             ->unique('id');
+    }
+
+    public function bankAccounts(): HasMany
+    {
+        return $this->hasMany(BankAccount::class);
+    }
+
+    public function bankTransactions(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            BankTransaction::class,
+            BankAccount::class,
+            'user_id',
+            'bank_account_id'
+        );
     }
 }

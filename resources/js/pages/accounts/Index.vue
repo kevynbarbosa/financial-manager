@@ -20,57 +20,41 @@ import BankAccountCard from '@/components/accounts/BankAccountCard.vue';
 import ContainerDefault from '@/components/layouts/ContainerDefault.vue';
 import Button from '@/components/ui/button/Button.vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatCurrency } from '@/pages/accounts/utils';
 import { Head } from '@inertiajs/vue3';
 import { ArrowDownRight, ArrowUpRight, FileUp } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import type { BankAccount } from '@/types/accounts';
 
-const bankAccounts = ref<BankAccount[]>([
+withDefaults(
+    defineProps<{
+        accounts: BankAccount[];
+        summary: {
+            totalBalance: number;
+            totalIncome: number;
+            totalExpense: number;
+            period: {
+                start: string;
+                end: string;
+            };
+        };
+    }>(),
     {
-        id: 1,
-        name: 'Conta Corrente - Nubank',
-        institution: 'Nubank',
-        balance: 12540.74,
-        monthlyMovements: {
-            income: 18452.2,
-            expense: 14210.9,
-        },
-    },
-    {
-        id: 2,
-        name: 'Conta PJ - Itaú',
-        institution: 'Itaú Empresas',
-        balance: 30210.9,
-        monthlyMovements: {
-            income: 28110.5,
-            expense: 19540.25,
-        },
-    },
-    {
-        id: 3,
-        name: 'Poupança - Caixa',
-        institution: 'Caixa Econômica',
-        balance: 18200,
-        monthlyMovements: {
-            income: 1200,
-            expense: 350,
-        },
-    },
-]);
-
-const currencyFormatter = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-});
+        accounts: () => [],
+        summary: () => ({
+            totalBalance: 0,
+            totalIncome: 0,
+            totalExpense: 0,
+            period: {
+                start: '',
+                end: '',
+            },
+        }),
+    }
+);
 
 const ofxInputRef = ref<HTMLInputElement | null>(null);
 const importFeedback = ref('');
-
-const totalBalance = computed(() => bankAccounts.value.reduce((sum, account) => sum + account.balance, 0));
-const totalIncome = computed(() => bankAccounts.value.reduce((sum, account) => sum + account.monthlyMovements.income, 0));
-const totalExpense = computed(() => bankAccounts.value.reduce((sum, account) => sum + account.monthlyMovements.expense, 0));
-
-const formatCurrency = (value: number) => currencyFormatter.format(value);
 
 const triggerOfxImport = () => {
     ofxInputRef.value?.click();
@@ -122,7 +106,7 @@ const handleOfxSelected = (event: Event) => {
             <Card class="border border-border/60">
                 <CardHeader class="space-y-1 pb-2">
                     <CardDescription class="text-xs uppercase tracking-wide text-muted-foreground">Saldo consolidado</CardDescription>
-                    <CardTitle class="text-3xl">{{ formatCurrency(totalBalance) }}</CardTitle>
+                    <CardTitle class="text-3xl">{{ formatCurrency(summary.totalBalance) }}</CardTitle>
                 </CardHeader>
                 <CardContent class="pt-0">
                     <p class="text-xs text-muted-foreground">Atualizado em tempo real</p>
@@ -133,7 +117,7 @@ const handleOfxSelected = (event: Event) => {
                     <CardDescription class="text-xs uppercase tracking-wide text-muted-foreground">Entradas do mês</CardDescription>
                     <p class="flex items-center gap-2 text-emerald-500">
                         <ArrowUpRight class="h-4 w-4" />
-                        <span class="text-2xl font-semibold">{{ formatCurrency(totalIncome) }}</span>
+                        <span class="text-2xl font-semibold">{{ formatCurrency(summary.totalIncome) }}</span>
                     </p>
                 </CardHeader>
                 <CardContent class="pt-0">
@@ -145,7 +129,7 @@ const handleOfxSelected = (event: Event) => {
                     <CardDescription class="text-xs uppercase tracking-wide text-muted-foreground">Saídas do mês</CardDescription>
                     <p class="flex items-center gap-2 text-rose-500">
                         <ArrowDownRight class="h-4 w-4" />
-                        <span class="text-2xl font-semibold">{{ formatCurrency(totalExpense) }}</span>
+                        <span class="text-2xl font-semibold">{{ formatCurrency(summary.totalExpense) }}</span>
                     </p>
                 </CardHeader>
                 <CardContent class="pt-0">
@@ -163,7 +147,7 @@ const handleOfxSelected = (event: Event) => {
             </CardHeader>
             <CardContent>
                 <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    <BankAccountCard v-for="account in bankAccounts" :key="account.id" :account="account" />
+                    <BankAccountCard v-for="account in accounts" :key="account.id" :account="account" />
                 </div>
             </CardContent>
         </Card>

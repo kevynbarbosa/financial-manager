@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -15,9 +16,7 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('accounts', function () {
-        return Inertia::render('accounts/Index');
-    })->name('accounts.index');
+    Route::get('accounts', [BankAccountController::class, 'index'])->name('accounts.index');
 
     Route::resource('users', UserController::class);
     Route::get('users/{user}/permissions', [UserController::class, 'permissions'])->name('users.permissions');

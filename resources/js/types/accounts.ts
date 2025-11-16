@@ -3,6 +3,8 @@ export type BankAccount = {
     name: string;
     institution: string;
     balance: number;
+    currency?: string;
+    accountType?: string;
     monthlyMovements: {
         income: number;
         expense: number;
