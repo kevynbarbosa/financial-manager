@@ -18,6 +18,8 @@ Route::get('dashboard', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('accounts', [BankAccountController::class, 'index'])->name('accounts.index');
+    Route::get('accounts/{account}/edit', [BankAccountController::class, 'edit'])->name('accounts.edit');
+    Route::put('accounts/{account}', [BankAccountController::class, 'update'])->name('accounts.update');
     Route::post('accounts/import-ofx', [BankAccountController::class, 'importOfx'])->name('accounts.import-ofx');
     Route::get('transactions/{transaction}/tags', [BankTransactionTagController::class, 'edit'])->name('transactions.tags.edit');
     Route::put('transactions/{transaction}/tags', [BankTransactionTagController::class, 'update'])->name('transactions.tags.update');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ImportOfxRequest;
+use App\Http\Requests\UpdateBankAccountRequest;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
 use App\Models\Tag;
@@ -14,6 +15,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use InertiaUI\Modal\Modal as ModalResponse;
+
+use function InertiaUI\Modal\back_from_modal;
 
 class BankAccountController extends Controller
 {
@@ -203,6 +207,49 @@ class BankAccountController extends Controller
                 'debit' => (float) ($totals->debit_total ?? 0),
             ],
             'breakdown' => $breakdown->all(),
+        ];
+    }
+
+    public function edit(Request $request, BankAccount $account): ModalResponse
+    {
+        $this->ensureOwnsAccount($request->user(), $account);
+
+        return Inertia::modal('accounts/modals/EditBankAccount', [
+            'account' => [
+                'id' => $account->id,
+                'name' => $account->name,
+                'institution' => $account->institution,
+                'account_type' => $account->account_type,
+                'account_number' => $account->account_number,
+                'currency' => $account->currency,
+            ],
+            'accountTypes' => $this->accountTypeOptions(),
+        ])->baseRoute('accounts.index');
+    }
+
+    public function update(UpdateBankAccountRequest $request, BankAccount $account): RedirectResponse
+    {
+        $this->ensureOwnsAccount($request->user(), $account);
+
+        $account->update($request->validated());
+
+        return back_from_modal()->with('success', 'Conta atualizada com sucesso.');
+    }
+
+    protected function ensureOwnsAccount(?User $user, BankAccount $account): void
+    {
+        abort_if(! $user, 403);
+        abort_if($account->user_id !== $user->id, 403);
+    }
+
+    protected function accountTypeOptions(): array
+    {
+        return [
+            ['value' => 'checking', 'label' => 'Conta corrente'],
+            ['value' => 'savings', 'label' => 'Conta poupança'],
+            ['value' => 'credit', 'label' => 'Cartão de crédito'],
+            ['value' => 'investment', 'label' => 'Investimentos'],
+            ['value' => 'business', 'label' => 'Conta empresarial'],
         ];
     }
 }

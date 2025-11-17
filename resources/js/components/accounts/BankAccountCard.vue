@@ -2,7 +2,8 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { BankAccount } from '@/types/accounts';
 import { formatCurrency } from '@/pages/accounts/utils';
-import { ArrowDownRight, ArrowUpRight } from 'lucide-vue-next';
+import { edit as editAccountRoute } from '@/routes/accounts';
+import { ArrowDownRight, ArrowUpRight, Pencil } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
@@ -20,6 +21,8 @@ const incomePercent = computed(() => {
 
     return Math.round((income / total) * 100);
 });
+
+const editAccountUrl = (accountId: number) => editAccountRoute(accountId).url;
 </script>
 
 <template>
@@ -30,7 +33,18 @@ const incomePercent = computed(() => {
                     <p class="text-sm leading-tight font-semibold">{{ account.name }}</p>
                     <p class="text-xs text-muted-foreground">{{ account.institution }}</p>
                 </div>
-                <span class="text-sm font-semibold text-primary">{{ formatCurrency(account.balance) }}</span>
+                <div class="flex flex-col items-end gap-1">
+                    <span class="text-sm font-semibold text-primary">{{ formatCurrency(account.balance) }}</span>
+                    <ModalLink
+                        :href="editAccountUrl(account.id)"
+                        as="button"
+                        type="button"
+                        class="inline-flex items-center gap-1 rounded-md border border-border/60 px-2 py-1 text-[11px] font-semibold text-muted-foreground transition hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                        <Pencil class="h-3 w-3" />
+                        Editar
+                    </ModalLink>
+                </div>
             </div>
         </CardHeader>
         <CardContent class="space-y-2 pt-4">
