@@ -17,8 +17,6 @@ class OfxImportService
 
         $accountData = $data['account'];
         $accountNumber = $accountData['number'] ?: 'ofx-' . md5($file->getClientOriginalName());
-
-        logger($accountNumber);
         $account = BankAccount::firstOrCreate(
             [
                 'user_id' => $user->id,
@@ -67,6 +65,17 @@ class OfxImportService
 
             $created++;
         }
+
+        $totals = $account->transactions()
+            ->selectRaw("SUM(CASE WHEN type = 'credit' THEN amount ELSE 0 END) as total_credit")
+            ->selectRaw("SUM(CASE WHEN type = 'debit' THEN ABS(amount) ELSE 0 END) as total_debit")
+            ->first();
+
+        $credits = (float) (optional($totals)->total_credit ?? 0);
+        $debits = (float) (optional($totals)->total_debit ?? 0);
+        $balance = $credits - $debits;
+
+        $account->forceFill(['balance' => $balance])->save();
 
         return [
             'account' => $account,
