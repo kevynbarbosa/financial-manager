@@ -19,6 +19,7 @@ class BankTransaction extends Model
         'occurred_at',
         'category',
         'external_id',
+        'transaction_category_id',
         'metadata',
     ];
 
@@ -36,5 +37,10 @@ class BankTransaction extends Model
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class)->withTimestamps();
+    }
+
+    public function categoryRelation(): BelongsTo
+    {
+        return $this->belongsTo(TransactionCategory::class, 'transaction_category_id');
     }
 }

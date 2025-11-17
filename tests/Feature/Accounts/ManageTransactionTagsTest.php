@@ -3,6 +3,7 @@
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
 use App\Models\Tag;
+use App\Models\TransactionCategory;
 use App\Models\User;
 
 use function Pest\Laravel\actingAs;
@@ -17,11 +18,14 @@ it('updates a transaction description and tags for the authenticated user', func
 
     actingAs($user);
 
+    $category = TransactionCategory::factory()->for($user)->create(['name' => 'Serviços']);
+
     $response = $this
         ->from(route('accounts.index'))
         ->put(route('transactions.tags.update', $transaction), [
             'description' => 'Pagamento atualizado',
             'tags' => [$existingTag->name, 'Educação'],
+            'category_id' => $category->id,
         ]);
 
     $response->assertRedirect(route('accounts.index'));
@@ -30,6 +34,7 @@ it('updates a transaction description and tags for the authenticated user', func
     $transaction->load('tags');
 
     expect($transaction->description)->toBe('Pagamento atualizado');
+    expect($transaction->transaction_category_id)->toBe($category->id);
     expect($transaction->tags)->toHaveCount(2);
     expect($transaction->tags->pluck('name')->all())->toEqualCanonicalizing(['Essenciais', 'Educação']);
 
@@ -51,6 +56,7 @@ it('prevents users from updating transactions they do not own', function () {
         ->put(route('transactions.tags.update', $transaction), [
             'description' => 'Tentativa inválida',
             'tags' => ['Fraude'],
+            'category_id' => null,
         ])
         ->assertForbidden();
 });

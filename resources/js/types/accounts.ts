@@ -16,13 +16,20 @@ export type TransactionTag = {
     name: string;
 };
 
+export type TransactionCategorySummary = {
+    id: number;
+    name: string;
+    icon?: string | null;
+    color?: string | null;
+};
+
 export type BankTransaction = {
     id: number;
     description: string;
     amount: number;
     type: 'credit' | 'debit';
     occurred_at: string | null;
-    category?: string | null;
+    category?: TransactionCategorySummary | null;
     tags: TransactionTag[];
     account: {
         id: number;
@@ -37,6 +44,7 @@ export type TransactionFilters = {
     account?: number | null;
     start_date?: string;
     end_date?: string;
+    category?: string;
 };
 
 export type PaginatedResource<T> = {
@@ -68,4 +76,9 @@ export type TagReports = {
         debit: number;
     };
     breakdown: TagReportEntry[];
+};
+
+export type TransactionCategoryOption = TransactionCategorySummary & {
+    value: string;
+    label: string;
 };

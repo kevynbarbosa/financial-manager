@@ -4,29 +4,45 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/pages/accounts/utils';
 import { formatDateTime } from '@/lib/date-utils';
-import type { BankTransaction, TransactionTag } from '@/types/accounts';
+import type { BankTransaction, TransactionCategorySummary, TransactionTag } from '@/types/accounts';
 import { Head, useForm } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import { update as updateTransactionTags } from '@/routes/transactions/tags';
+import {
+    Car,
+    Coffee,
+    CreditCard,
+    Dumbbell,
+    Gift,
+    Home,
+    PiggyBank,
+    ShoppingBag,
+    Store,
+    Wallet,
+} from 'lucide-vue-next';
 
 type TagForm = {
     description: string;
     tags: string[];
+    category_id: number | null;
 };
 
 const props = withDefaults(
     defineProps<{
         transaction: BankTransaction;
         availableTags?: TransactionTag[];
+        categoryOptions?: TransactionCategorySummary[];
     }>(),
     {
         availableTags: () => [],
+        categoryOptions: () => [],
     }
 );
 
 const form = useForm<TagForm>({
     description: props.transaction.description ?? '',
     tags: props.transaction.tags.map((tag) => tag.name),
+    category_id: props.transaction.category?.id ?? null,
 });
 
 const newTag = ref('');
@@ -36,6 +52,24 @@ const sortedTagOptions = computed(() => {
 });
 
 const selectedTags = computed(() => form.tags);
+const categoryOptions = computed(() => props.categoryOptions);
+
+const selectCategory = (category: TransactionCategorySummary | null) => {
+    form.category_id = category?.id ?? null;
+};
+
+const iconComponents: Record<string, any> = {
+    wallet: Wallet,
+    'credit-card': CreditCard,
+    'shopping-bag': ShoppingBag,
+    store: Store,
+    'piggy-bank': PiggyBank,
+    car: Car,
+    home: Home,
+    gift: Gift,
+    coffee: Coffee,
+    dumbbell: Dumbbell,
+};
 
 const toggleTag = (tagName: string) => {
     const normalized = tagName.trim();
@@ -126,6 +160,46 @@ const submit = () => {
                     <p v-if="form.errors.description" class="text-xs text-rose-500">
                         {{ form.errors.description }}
                     </p>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <p class="text-sm font-medium text-foreground">Categoria</p>
+                        <span class="text-xs text-muted-foreground">
+                            {{ form.category_id ? 'Categoria aplicada' : 'Sem categoria' }}
+                        </span>
+                    </div>
+                    <div class="grid gap-2 sm:grid-cols-2">
+                        <button
+                            type="button"
+                            class="flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition"
+                            :class="!form.category_id ? 'border-primary bg-primary/10 text-primary' : 'border-border/70 text-muted-foreground hover:border-primary/60'"
+                            @click="selectCategory(null)"
+                        >
+                            Sem categoria
+                        </button>
+                        <button
+                            v-for="category in categoryOptions"
+                            :key="category.id"
+                            type="button"
+                            class="flex items-center justify-start gap-3 rounded-lg border px-3 py-2 text-left text-sm transition"
+                            :class="form.category_id === category.id ? 'border-primary bg-primary/10 text-primary' : 'border-border/70 text-muted-foreground hover:border-primary/60'"
+                            @click="selectCategory(category)"
+                        >
+                            <span
+                                class="inline-flex h-8 w-8 items-center justify-center rounded-full border"
+                                :style="{ backgroundColor: category.color || 'transparent' }"
+                            >
+                                <component
+                                    v-if="category.icon && iconComponents[category.icon]"
+                                    :is="iconComponents[category.icon]"
+                                    class="h-4 w-4 text-background"
+                                />
+                            </span>
+                            <span class="font-semibold">{{ category.name }}</span>
+                        </button>
+                    </div>
+                    <p v-if="form.errors.category_id" class="text-xs text-rose-500">{{ form.errors.category_id }}</p>
                 </div>
 
                 <div class="space-y-3">

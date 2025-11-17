@@ -8,9 +8,24 @@ import { formatDateTime } from '@/lib/date-utils';
 import { index as accountsIndex } from '@/routes/accounts';
 import { edit as transactionTagsEdit } from '@/routes/transactions/tags';
 import { formatCurrency } from '@/pages/accounts/utils';
-import type { BankTransaction, PaginatedResource, TransactionFilters } from '@/types/accounts';
+import type { BankTransaction, PaginatedResource, TransactionCategoryOption, TransactionFilters } from '@/types/accounts';
 import { router } from '@inertiajs/vue3';
-import { ArrowDownRight, ArrowUpRight, Filter, Tag as TagIcon } from 'lucide-vue-next';
+import {
+    ArrowDownRight,
+    ArrowUpRight,
+    Filter,
+    Pencil,
+    Car,
+    Coffee,
+    CreditCard,
+    Dumbbell,
+    Gift,
+    Home,
+    PiggyBank,
+    ShoppingBag,
+    Store,
+    Wallet,
+} from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
 
 type AccountOption = {
@@ -25,6 +40,7 @@ type FilterFormState = {
     account: string;
     start_date: string;
     end_date: string;
+    category: string;
 };
 
 const props = withDefaults(
@@ -32,6 +48,7 @@ const props = withDefaults(
         transactions: PaginatedResource<BankTransaction>;
         filters: TransactionFilters;
         accountOptions?: AccountOption[];
+        categoryOptions?: TransactionCategoryOption[];
     }>(),
     {
         transactions: () => ({
@@ -54,8 +71,10 @@ const props = withDefaults(
             account: null,
             start_date: '',
             end_date: '',
+            category: '',
         }),
         accountOptions: () => [],
+        categoryOptions: () => [],
     }
 );
 
@@ -65,6 +84,7 @@ const filterState = reactive<FilterFormState>({
     account: props.filters?.account ? String(props.filters.account) : '',
     start_date: props.filters?.start_date ?? '',
     end_date: props.filters?.end_date ?? '',
+    category: props.filters?.category ?? '',
 });
 
 const isLoading = ref(false);
@@ -75,7 +95,8 @@ const hasActiveFilters = computed(() => {
             filterState.type ||
             filterState.account ||
             filterState.start_date ||
-            filterState.end_date
+            filterState.end_date ||
+            filterState.category
     );
 });
 
@@ -100,6 +121,10 @@ const filtersPayload = computed(() => {
 
     if (filterState.end_date) {
         payload.end_date = filterState.end_date;
+    }
+
+    if (filterState.category) {
+        payload.category = filterState.category;
     }
 
     return payload;
@@ -137,6 +162,7 @@ watch(
         filterState.account = currentFilters?.account ? String(currentFilters.account) : '';
         filterState.start_date = currentFilters?.start_date ?? '';
         filterState.end_date = currentFilters?.end_date ?? '';
+        filterState.category = currentFilters?.category ?? '';
     }
 );
 
@@ -151,6 +177,30 @@ const transactionCountLabel = computed(() => {
 const tableIsEmpty = computed(() => !props.transactions.data.length && !isLoading.value);
 
 const transactionTagModalUrl = (transactionId: number) => transactionTagsEdit(transactionId).url;
+
+const iconComponents: Record<string, any> = {
+    wallet: Wallet,
+    'credit-card': CreditCard,
+    'shopping-bag': ShoppingBag,
+    store: Store,
+    'piggy-bank': PiggyBank,
+    car: Car,
+    home: Home,
+    gift: Gift,
+    coffee: Coffee,
+    dumbbell: Dumbbell,
+};
+
+const categoryFilterOptions = computed(() => {
+    const base = [{ value: '', label: 'Todas as categorias' }, { value: 'none', label: 'Sem categoria' }];
+
+    const categories = props.categoryOptions?.map((category) => ({
+        value: String(category.id),
+        label: category.name,
+    })) ?? [];
+
+    return [...base, ...categories];
+});
 </script>
 
 <template>
@@ -175,7 +225,7 @@ const transactionTagModalUrl = (transactionId: number) => transactionTagsEdit(tr
         </CardHeader>
         <CardContent class="space-y-4">
             <form class="space-y-3" @submit.prevent="submitFilters">
-                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                     <div class="space-y-1">
                         <label class="text-xs font-medium text-muted-foreground" for="transaction-search">Buscar</label>
                         <Input
@@ -184,6 +234,18 @@ const transactionTagModalUrl = (transactionId: number) => transactionTagsEdit(tr
                             type="text"
                             placeholder="Descrição ou categoria"
                         />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-muted-foreground" for="transaction-category">Categoria</label>
+                        <select
+                            id="transaction-category"
+                            v-model="filterState.category"
+                            class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                            <option v-for="option in categoryFilterOptions" :key="option.value" :value="option.value">
+                                {{ option.label }}
+                            </option>
+                        </select>
                     </div>
                     <div class="space-y-1">
                         <label class="text-xs font-medium text-muted-foreground" for="transaction-type">Tipo</label>
@@ -264,7 +326,20 @@ const transactionTagModalUrl = (transactionId: number) => transactionTagsEdit(tr
                                 <p class="font-medium text-foreground">{{ transaction.description }}</p>
                             </TableCell>
                             <TableCell>
-                                <span class="text-sm text-muted-foreground">{{ transaction.category || '-' }}</span>
+                                <div v-if="transaction.category" class="flex items-center gap-2">
+                                    <span
+                                        class="inline-flex h-6 w-6 items-center justify-center rounded-full border"
+                                        :style="{ backgroundColor: transaction.category.color || 'transparent' }"
+                                    >
+                                        <component
+                                            v-if="transaction.category.icon && iconComponents[transaction.category.icon]"
+                                            :is="iconComponents[transaction.category.icon]"
+                                            class="h-3.5 w-3.5 text-background"
+                                        />
+                                    </span>
+                                    <span class="text-sm font-medium text-foreground">{{ transaction.category.name }}</span>
+                                </div>
+                                <span v-else class="text-sm text-muted-foreground">Sem categoria</span>
                             </TableCell>
                             <TableCell>
                                 <div class="flex flex-wrap gap-1">
@@ -308,8 +383,8 @@ const transactionTagModalUrl = (transactionId: number) => transactionTagsEdit(tr
                                     type="button"
                                     class="inline-flex items-center justify-center gap-2 rounded-md border border-border/70 bg-background px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-70"
                                 >
-                                    <TagIcon class="h-3.5 w-3.5" />
-                                    <span>Editar tags</span>
+                                    <Pencil class="h-3.5 w-3.5" />
+                                    <span>Editar</span>
                                 </ModalLink>
                             </TableCell>
                         </TableRow>

@@ -45,6 +45,7 @@ const props = withDefaults(
         transactions: PaginatedResource<BankTransaction>;
         transactionFilters: TransactionFilters;
         tagReports: TagReports;
+        transactionCategoryOptions: TransactionCategoryOption[];
     }>(),
     {
         accounts: () => [],
@@ -85,6 +86,7 @@ const props = withDefaults(
             },
             breakdown: [],
         }),
+        transactionCategoryOptions: () => [],
     },
 );
 
@@ -258,6 +260,11 @@ const importStatusMessage = computed(() => flashMessage.value || importFeedback.
 
         <TagBreakdownCard :reports="tagReports" />
 
-        <BankTransactionsTable :transactions="transactions" :filters="transactionFilters" :account-options="accountFilterOptions" />
+        <BankTransactionsTable
+            :transactions="transactions"
+            :filters="transactionFilters"
+            :account-options="accountFilterOptions"
+            :category-options="transactionCategoryOptions"
+        />
     </ContainerDefault>
 </template>

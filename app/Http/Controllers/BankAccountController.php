@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateBankAccountRequest;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
 use App\Models\Tag;
+use App\Models\TransactionCategory;
 use App\Models\User;
 use App\Services\Ofx\OfxImportService;
 use Carbon\Carbon;
@@ -36,7 +37,22 @@ class BankAccountController extends Controller
             'account' => $request->filled('account') ? (int) $request->input('account') : null,
             'start_date' => $request->string('start_date')->toString(),
             'end_date' => $request->string('end_date')->toString(),
+            'category' => $request->string('category')->toString(),
         ];
+
+        $transactionCategories = TransactionCategory::query()
+            ->where('user_id', $user->id)
+            ->orderBy('name')
+            ->get(['id', 'name', 'icon', 'color'])
+            ->map(fn (TransactionCategory $category) => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'icon' => $category->icon,
+                'color' => $category->color,
+                'value' => (string) $category->id,
+                'label' => $category->name,
+            ])
+            ->values();
 
         $accounts = BankAccount::query()
             ->where('user_id', $user->id)
@@ -59,6 +75,7 @@ class BankAccountController extends Controller
         $transactions = BankTransaction::query()
             ->with([
                 'account:id,name,institution,user_id',
+                'categoryRelation:id,name,icon,color',
                 'tags:id,name',
             ])
             ->whereHas('account', function (Builder $query) use ($user) {
@@ -79,16 +96,41 @@ class BankAccountController extends Controller
             ->when($transactionFilters['end_date'], function (Builder $query, string $endDate) {
                 $query->whereDate('occurred_at', '<=', Carbon::parse($endDate));
             })
+            ->when($transactionFilters['category'], function (Builder $query, string $category) {
+                if ($category === 'none') {
+                    $query->whereNull('transaction_category_id');
+                } else {
+                    $query->where('transaction_category_id', (int) $category);
+                }
+            })
             ->latest('occurred_at')
             ->paginate(10)
             ->withQueryString()
             ->through(function (BankTransaction $transaction) {
+                $category = null;
+
+                if ($transaction->categoryRelation) {
+                    $category = [
+                        'id' => $transaction->categoryRelation->id,
+                        'name' => $transaction->categoryRelation->name,
+                        'icon' => $transaction->categoryRelation->icon,
+                        'color' => $transaction->categoryRelation->color,
+                    ];
+                } elseif ($transaction->category) {
+                    $category = [
+                        'id' => null,
+                        'name' => $transaction->category,
+                        'icon' => null,
+                        'color' => null,
+                    ];
+                }
+
                 return [
                     'id' => $transaction->id,
                     'description' => $transaction->description,
                     'amount' => (float) $transaction->amount,
                     'type' => $transaction->type,
-                    'category' => $transaction->category,
+                    'category' => $category,
                     'occurred_at' => optional($transaction->occurred_at)->toDateTimeString(),
                     'account' => [
                         'id' => $transaction->account->id,
@@ -134,6 +176,7 @@ class BankAccountController extends Controller
             'summary' => $summary,
             'transactions' => $transactions,
             'transactionFilters' => $transactionFilters,
+            'transactionCategoryOptions' => $transactionCategories,
             'tagReports' => $tagReports,
         ]);
     }
