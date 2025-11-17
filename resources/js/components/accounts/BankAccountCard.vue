@@ -10,7 +10,8 @@ const props = defineProps<{
 }>();
 
 const incomePercent = computed(() => {
-    const { income, expense } = props.account.monthlyMovements;
+    const income = Math.max(0, props.account.monthlyMovements.income);
+    const expense = Math.abs(props.account.monthlyMovements.expense);
     const total = income + expense;
 
     if (!total) {
@@ -43,7 +44,7 @@ const incomePercent = computed(() => {
                     {{ formatCurrency(account.monthlyMovements.expense) }}
                 </span>
             </div>
-            <div class="h-2 w-full rounded-full bg-muted">
+            <div class="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div class="h-full rounded-full bg-emerald-500 transition-[width]" :style="{ width: `${incomePercent}%` }" />
             </div>
             <p class="text-[11px] text-muted-foreground">Movimentação mensal</p>

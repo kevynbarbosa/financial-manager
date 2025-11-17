@@ -63,6 +63,29 @@ it('does not duplicate transactions with the same FITID', function () {
     ]);
 });
 
+it('imports OFX files from Nubank credit card statements', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    $file = UploadedFile::fake()->createWithContent('nubank.ofx', sampleNubankOfxContent());
+
+    $this->post(route('accounts.import-ofx'), [
+        'ofx_file' => $file,
+    ])->assertRedirect(route('accounts.index'));
+
+    $account = BankAccount::where('user_id', $user->id)
+        ->where('account_number', '5a259310-a12b-419c-80a3-73593b58786e')
+        ->first();
+
+    expect($account)->not->toBeNull();
+
+    $this->assertDatabaseHas('bank_transactions', [
+        'bank_account_id' => $account->id,
+        'external_id' => 'fit-1',
+        'description' => 'Yellow Burgers & Dogs',
+    ]);
+});
+
 function sampleOfxContent(): string
 {
     return <<<OFX
@@ -113,6 +136,70 @@ NEWFILEUID:NONE
       </STMTRS>
     </STMTTRS>
   </BANKMSGSRSV1>
+</OFX>
+OFX;
+}
+
+function sampleNubankOfxContent(): string
+{
+    return <<<OFX
+OFXHEADER:100
+DATA:OFXSGML
+VERSION:102
+SECURITY:NONE
+ENCODING:USASCII
+CHARSET:1252
+COMPRESSION:NONE
+OLDFILEUID:NONE
+NEWFILEUID:NONE
+<OFX>
+<SIGNONMSGSRSV1>
+<SONRS>
+<STATUS>
+<CODE>0</CODE>
+<SEVERITY>INFO</SEVERITY>
+</STATUS>
+<DTSERVER>20251103142506[0:GMT]</DTSERVER>
+<LANGUAGE>POR</LANGUAGE>
+<FI>
+<ORG>NU PAGAMENTOS S.A.</ORG>
+<FID>260</FID>
+</FI>
+</SONRS>
+</SIGNONMSGSRSV1>
+<CREDITCARDMSGSRSV1>
+<CCSTMTTRNRS>
+<TRNUID>1001</TRNUID>
+<STATUS>
+<CODE>0</CODE>
+<SEVERITY>INFO</SEVERITY>
+</STATUS>
+<CCSTMTRS>
+<CURDEF>BRL</CURDEF>
+<CCACCTFROM>
+<ACCTID>5a259310-a12b-419c-80a3-73593b58786e</ACCTID>
+</CCACCTFROM>
+<BANKTRANLIST>
+<DTSTART>20251031000000[-3:BRT]</DTSTART>
+<DTEND>20251130000000[-3:BRT]</DTEND>
+<STMTTRN>
+<TRNTYPE>DEBIT</TRNTYPE>
+<DTPOSTED>20251102000000[-3:BRT]</DTPOSTED>
+<TRNAMT>-97.00</TRNAMT>
+<FITID>fit-1</FITID>
+<MEMO>Yellow Burgers & Dogs</MEMO>
+</STMTTRN>
+<STMTTRN>
+<TRNTYPE>DEBIT</TRNTYPE>
+<DTPOSTED>20251102000000[-3:BRT]</DTPOSTED>
+<TRNAMT>-10.49</TRNAMT>
+<FITID>fit-2</FITID>
+<MEMO>Oxxo Sorvete Neves</MEMO>
+</STMTTRN>
+</BANKTRANLIST>
+</CCSTMTRS>
+</CCSTMTTRNRS>
+</CREDITCARDMSGSRSV1>
 </OFX>
 OFX;
 }

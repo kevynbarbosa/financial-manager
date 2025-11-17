@@ -18,7 +18,9 @@ class OfxParser
             throw new RuntimeException('Não foi possível interpretar o arquivo OFX enviado.');
         }
 
-        $statement = $xml->BANKMSGSRSV1->STMTTRNRS->STMTRS ?? null;
+        $statement = $xml->BANKMSGSRSV1->STMTTRNRS->STMTRS
+            ?? $xml->CREDITCARDMSGSRSV1->CCSTMTTRNRS->CCSTMTRS
+            ?? null;
 
         if (! $statement) {
             throw new RuntimeException('O arquivo OFX não contém informações bancárias válidas.');
@@ -43,8 +45,8 @@ class OfxParser
 
         $body = substr($contents, $start);
 
-        // Normalize SGML-like tags into proper XML
-        $body = preg_replace('/<([^\/>]+)>([^<\r\n]+)/', '<$1>$2</$1>', $body);
+        $body = $this->closeUnterminatedTags($body);
+        $body = $this->escapeInvalidEntities($body);
 
         if (! is_string($body)) {
             throw new RuntimeException('Não foi possível normalizar o arquivo OFX.');
@@ -53,10 +55,37 @@ class OfxParser
         return $body;
     }
 
+    protected function closeUnterminatedTags(string $body): string
+    {
+        $lines = preg_split('/\r?\n/', $body);
+
+        foreach ($lines as $index => $line) {
+            if (! preg_match('/^<([A-Z0-9_]+)>(.*)$/i', $line, $matches)) {
+                continue;
+            }
+
+            $tag = $matches[1];
+            $value = $matches[2];
+
+            if ($value === '' || str_contains($value, '</')) {
+                continue;
+            }
+
+            $lines[$index] = sprintf('<%s>%s</%s>', $tag, $value, $tag);
+        }
+
+        return implode(PHP_EOL, $lines);
+    }
+
+    protected function escapeInvalidEntities(string $body): string
+    {
+        return preg_replace('/&(?![a-zA-Z]+;)/', '&amp;', $body);
+    }
+
     protected function parseAccount(SimpleXMLElement $xml, SimpleXMLElement $statement): array
     {
         $fi = $xml->SIGNONMSGSRSV1->SONRS->FI ?? null;
-        $account = $statement->BANKACCTFROM ?? null;
+        $account = $statement->BANKACCTFROM ?? $statement->CCACCTFROM ?? null;
 
         $accountNumber = $account?->ACCTID ? trim((string) $account->ACCTID) : null;
         $accountType = $account?->ACCTTYPE ? strtolower((string) $account->ACCTTYPE) : null;
@@ -69,7 +98,7 @@ class OfxParser
             'bank_id' => $bankId,
             'institution' => $institution,
             'currency' => $statement->CURDEF ? trim((string) $statement->CURDEF) : 'BRL',
-            'name' => $statement->BANKACCTFROM?->ACCTID ? 'Conta ' . trim((string) $statement->BANKACCTFROM->ACCTID) : null,
+            'name' => $account?->ACCTID ? 'Conta ' . trim((string) $account->ACCTID) : null,
         ];
     }
 
