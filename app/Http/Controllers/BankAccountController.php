@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ImportOfxRequest;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
 use App\Models\Tag;
 use App\Models\User;
+use App\Services\Ofx\OfxImportService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -129,6 +132,30 @@ class BankAccountController extends Controller
             'transactionFilters' => $transactionFilters,
             'tagReports' => $tagReports,
         ]);
+    }
+
+    public function importOfx(ImportOfxRequest $request, OfxImportService $importService): RedirectResponse
+    {
+        try {
+            $result = $importService->import($request->user(), $request->file('ofx_file'));
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return redirect()
+                ->route('accounts.index')
+                ->with('error', 'Não conseguimos importar o arquivo OFX. Verifique o arquivo e tente novamente.');
+        }
+
+        $message = sprintf(
+            'Importação concluída para %s: %d nova(s) transação(ões) e %d já existente(s).',
+            $result['account']->name,
+            $result['created'],
+            $result['skipped']
+        );
+
+        return redirect()
+            ->route('accounts.index')
+            ->with('success', $message);
     }
 
     protected function buildTagReports(User $user): array
