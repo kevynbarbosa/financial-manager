@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankTransactionTagController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
@@ -23,6 +24,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('accounts/import-ofx', [BankAccountController::class, 'importOfx'])->name('accounts.import-ofx');
     Route::get('transactions/{transaction}/tags', [BankTransactionTagController::class, 'edit'])->name('transactions.tags.edit');
     Route::put('transactions/{transaction}/tags', [BankTransactionTagController::class, 'update'])->name('transactions.tags.update');
+    Route::get('categories/create', [CategoryController::class, 'create'])->name('categories.create');
+    Route::get('categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
+    Route::resource('categories', CategoryController::class)->except(['show', 'create', 'edit']);
 
     Route::resource('users', UserController::class);
     Route::get('users/{user}/permissions', [UserController::class, 'permissions'])->name('users.permissions');

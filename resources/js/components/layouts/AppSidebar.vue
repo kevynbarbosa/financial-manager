@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { index as accountsIndex } from '@/routes/accounts';
+import { index as categoriesIndex } from '@/routes/categories';
 import { index as rolesIndex } from '@/routes/roles';
 import { index as usersIndex } from '@/routes/users';
 import { type NavItem } from '@/types';
@@ -32,6 +33,11 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Categorias',
+        href: categoriesIndex.url(),
+        icon: Folder,
     },
 
     {

@@ -122,4 +122,9 @@ class User extends Authenticatable
             'bank_account_id'
         );
     }
+
+    public function transactionCategories(): HasMany
+    {
+        return $this->hasMany(TransactionCategory::class);
+    }
 }
