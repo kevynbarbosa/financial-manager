@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateTransactionTagsRequest;
+use App\Http\Requests\UpdateTransactionCategoryRequest;
 use App\Models\BankTransaction;
 use App\Models\Tag;
 use App\Models\TransactionCategory;
@@ -118,6 +119,30 @@ class BankTransactionTagController extends Controller
         $transaction->tags()->sync($tagIds->all());
 
         return back_from_modal()->with('success', 'Transação atualizada com sucesso.');
+    }
+
+    public function updateCategory(UpdateTransactionCategoryRequest $request, BankTransaction $transaction): RedirectResponse
+    {
+        $user = $request->user();
+        $this->ensureOwnsTransaction($transaction, $user);
+
+        $categoryId = $request->validated('category_id');
+        $categoryName = null;
+
+        if ($categoryId) {
+            $category = TransactionCategory::query()
+                ->where('user_id', $user->id)
+                ->findOrFail($categoryId);
+
+            $categoryName = $category->name;
+        }
+
+        $transaction->update([
+            'transaction_category_id' => $categoryId,
+            'category' => $categoryName,
+        ]);
+
+        return back()->with('success', 'Categoria atualizada.');
     }
 
     protected function ensureOwnsTransaction(BankTransaction $transaction, ?User $user): void

@@ -6,16 +6,18 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatDateTime } from '@/lib/date-utils';
 import { index as accountsIndex } from '@/routes/accounts';
-import { edit as transactionTagsEdit } from '@/routes/transactions/tags';
+import { edit as transactionTagsEdit, updateCategory as updateTransactionCategoryRoute } from '@/routes/transactions/tags';
 import { formatCurrency } from '@/pages/accounts/utils';
 import type { BankTransaction, PaginatedResource, TransactionCategoryOption, TransactionFilters } from '@/types/accounts';
 import { router } from '@inertiajs/vue3';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
     ArrowDownRight,
     ArrowUpRight,
     Filter,
     Pencil,
     Car,
+    Check,
     Coffee,
     CreditCard,
     Dumbbell,
@@ -151,6 +153,7 @@ const resetFilters = () => {
     filterState.account = '';
     filterState.start_date = '';
     filterState.end_date = '';
+    filterState.category = '';
     submitFilters();
 };
 
@@ -177,6 +180,21 @@ const transactionCountLabel = computed(() => {
 const tableIsEmpty = computed(() => !props.transactions.data.length && !isLoading.value);
 
 const transactionTagModalUrl = (transactionId: number) => transactionTagsEdit(transactionId).url;
+const updateTransactionCategory = (transactionId: number, categoryValue: string) => {
+    const payload = {
+        category_id: categoryValue === 'none' ? null : Number(categoryValue),
+    };
+
+    if (Number.isNaN(payload.category_id as number)) {
+        payload.category_id = null;
+    }
+
+    router.put(updateTransactionCategoryRoute(transactionId).url, payload, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['transactions', 'transactionFilters'],
+    });
+};
 
 const iconComponents: Record<string, any> = {
     wallet: Wallet,
@@ -326,20 +344,64 @@ const categoryFilterOptions = computed(() => {
                                 <p class="font-medium text-foreground">{{ transaction.description }}</p>
                             </TableCell>
                             <TableCell>
-                                <div v-if="transaction.category" class="flex items-center gap-2">
-                                    <span
-                                        class="inline-flex h-6 w-6 items-center justify-center rounded-full border"
-                                        :style="{ backgroundColor: transaction.category.color || 'transparent' }"
-                                    >
-                                        <component
-                                            v-if="transaction.category.icon && iconComponents[transaction.category.icon]"
-                                            :is="iconComponents[transaction.category.icon]"
-                                            class="h-3.5 w-3.5 text-background"
-                                        />
-                                    </span>
-                                    <span class="text-sm font-medium text-foreground">{{ transaction.category.name }}</span>
-                                </div>
-                                <span v-else class="text-sm text-muted-foreground">Sem categoria</span>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger as-child>
+                                        <button
+                                            type="button"
+                                            class="flex w-full items-center justify-between rounded-md border border-border/60 px-3 py-2 text-left text-sm font-medium transition hover:border-primary"
+                                        >
+                                            <span class="flex items-center gap-2">
+                                                <span
+                                                    class="inline-flex h-6 w-6 items-center justify-center rounded-full border"
+                                                    :style="{ backgroundColor: transaction.category?.color || 'transparent' }"
+                                                >
+                                                    <component
+                                                        v-if="transaction.category?.icon && iconComponents[transaction.category.icon]"
+                                                        :is="iconComponents[transaction.category.icon]"
+                                                        class="h-3.5 w-3.5 text-background"
+                                                    />
+                                                </span>
+                                                <span>
+                                                    {{ transaction.category?.name ?? 'Sem categoria' }}
+                                                </span>
+                                            </span>
+                                            <Pencil class="h-3.5 w-3.5 text-muted-foreground" />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent class="min-w-[260px]">
+                                        <DropdownMenuItem @click="updateTransactionCategory(transaction.id, 'none')">
+                                            <div class="flex items-center justify-between w-full">
+                                                <span>Sem categoria</span>
+                                                <Check v-if="!transaction.category" class="h-3.5 w-3.5 text-primary" />
+                                            </div>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            v-for="category in props.categoryOptions"
+                                            :key="category.id"
+                                            @click="updateTransactionCategory(transaction.id, String(category.id))"
+                                        >
+                                            <div class="flex items-center justify-between w-full">
+                                                <span class="flex items-center gap-2">
+                                                    <span
+                                                        class="inline-flex h-6 w-6 items-center justify-center rounded-full border"
+                                                        :style="{ backgroundColor: category.color || 'transparent' }"
+                                                    >
+                                                        <component
+                                                            v-if="category.icon && iconComponents[category.icon]"
+                                                            :is="iconComponents[category.icon]"
+                                                            class="h-3.5 w-3.5 text-background"
+                                                        />
+                                                    </span>
+                                                    {{ category.name }}
+                                                </span>
+                                                <Check
+                                                    v-if="transaction.category?.id === category.id"
+                                                    class="h-3.5 w-3.5 text-primary"
+                                                />
+                                            </div>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </TableCell>
                             <TableCell>
                                 <div class="flex flex-wrap gap-1">

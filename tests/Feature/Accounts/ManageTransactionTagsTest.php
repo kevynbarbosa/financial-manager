@@ -60,3 +60,19 @@ it('prevents users from updating transactions they do not own', function () {
         ])
         ->assertForbidden();
 });
+
+it('updates transaction category via quick action endpoint', function () {
+    $user = User::factory()->create();
+    $account = BankAccount::factory()->for($user)->create();
+    $transaction = BankTransaction::factory()->for($account)->create();
+    $category = TransactionCategory::factory()->for($user)->create();
+
+    actingAs($user);
+
+    $this->put(route('transactions.category.update', $transaction), [
+        'category_id' => $category->id,
+    ])->assertRedirect();
+
+    $transaction->refresh();
+    expect($transaction->transaction_category_id)->toBe($category->id);
+});
