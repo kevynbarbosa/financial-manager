@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/pages/accounts/utils';
 import { formatDateTime } from '@/lib/date-utils';
@@ -25,6 +26,7 @@ type TagForm = {
     description: string;
     tags: string[];
     category_id: number | null;
+    is_transfer: boolean;
 };
 
 const props = withDefaults(
@@ -43,6 +45,7 @@ const form = useForm<TagForm>({
     description: props.transaction.description ?? '',
     tags: props.transaction.tags.map((tag) => tag.name),
     category_id: props.transaction.category?.id ?? null,
+    is_transfer: props.transaction.is_transfer ?? false,
 });
 
 const newTag = ref('');
@@ -160,6 +163,22 @@ const submit = () => {
                     <p v-if="form.errors.description" class="text-xs text-rose-500">
                         {{ form.errors.description }}
                     </p>
+                </div>
+
+                <div
+                    class="flex flex-col gap-3 rounded-lg border border-border/60 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between"
+                >
+                    <div>
+                        <p class="text-sm font-semibold text-foreground">Transferência entre contas</p>
+                        <p class="text-xs text-muted-foreground">
+                            Quando ativado, a transação será ignorada em relatórios e somatórios.
+                        </p>
+                    </div>
+                    <Switch
+                        :model-value="form.is_transfer"
+                        @update:model-value="(checked: boolean) => (form.is_transfer = checked)"
+                        aria-label="Marcar como transferência entre contas"
+                    />
                 </div>
 
                 <div class="space-y-3">

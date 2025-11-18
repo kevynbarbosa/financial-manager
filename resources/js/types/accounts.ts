@@ -28,6 +28,7 @@ export type BankTransaction = {
     description: string;
     amount: number;
     type: 'credit' | 'debit';
+    is_transfer: boolean;
     occurred_at: string | null;
     category?: TransactionCategorySummary | null;
     tags: TransactionTag[];

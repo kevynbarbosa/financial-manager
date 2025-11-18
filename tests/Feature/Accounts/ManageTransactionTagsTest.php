@@ -26,6 +26,7 @@ it('updates a transaction description and tags for the authenticated user', func
             'description' => 'Pagamento atualizado',
             'tags' => [$existingTag->name, 'Educação'],
             'category_id' => $category->id,
+            'is_transfer' => true,
         ]);
 
     $response->assertRedirect(route('accounts.index'));
@@ -35,6 +36,7 @@ it('updates a transaction description and tags for the authenticated user', func
 
     expect($transaction->description)->toBe('Pagamento atualizado');
     expect($transaction->transaction_category_id)->toBe($category->id);
+    expect($transaction->is_transfer)->toBeTrue();
     expect($transaction->tags)->toHaveCount(2);
     expect($transaction->tags->pluck('name')->all())->toEqualCanonicalizing(['Essenciais', 'Educação']);
 

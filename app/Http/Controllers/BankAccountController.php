@@ -68,14 +68,16 @@ class BankAccountController extends Controller
             ->withSum(
                 ['transactions as monthly_income' => function ($query) use ($startOfMonth, $endOfMonth) {
                     $query->whereBetween('occurred_at', [$startOfMonth, $endOfMonth])
-                        ->where('type', 'credit');
+                        ->where('type', 'credit')
+                        ->where('is_transfer', false);
                 }],
                 'amount'
             )
             ->withSum(
                 ['transactions as monthly_expense' => function ($query) use ($startOfMonth, $endOfMonth) {
                     $query->whereBetween('occurred_at', [$startOfMonth, $endOfMonth])
-                        ->where('type', 'debit');
+                        ->where('type', 'debit')
+                        ->where('is_transfer', false);
                 }],
                 'amount'
             )
@@ -139,6 +141,7 @@ class BankAccountController extends Controller
                     'description' => $transaction->description,
                     'amount' => (float) $transaction->amount,
                     'type' => $transaction->type,
+                    'is_transfer' => (bool) $transaction->is_transfer,
                     'category' => $category,
                     'occurred_at' => optional($transaction->occurred_at)->toDateTimeString(),
                     'account' => [
@@ -223,6 +226,7 @@ class BankAccountController extends Controller
             ->join('bank_transaction_tag', 'tags.id', '=', 'bank_transaction_tag.tag_id')
             ->join('bank_transactions', 'bank_transaction_tag.bank_transaction_id', '=', 'bank_transactions.id')
             ->where('tags.user_id', $user->id)
+            ->where('bank_transactions.is_transfer', false)
             ->groupBy('tags.id', 'tags.name')
             ->get();
 
@@ -251,6 +255,7 @@ class BankAccountController extends Controller
             ->whereHas('tags', function (Builder $query) use ($user) {
                 $query->where('tags.user_id', $user->id);
             })
+            ->where('is_transfer', false)
             ->first();
 
         return [

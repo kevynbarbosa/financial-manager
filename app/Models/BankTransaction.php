@@ -21,12 +21,14 @@ class BankTransaction extends Model
         'external_id',
         'transaction_category_id',
         'metadata',
+        'is_transfer',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'metadata' => 'array',
         'occurred_at' => 'datetime',
+        'is_transfer' => 'boolean',
     ];
 
     public function account(): BelongsTo

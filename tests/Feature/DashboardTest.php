@@ -46,6 +46,13 @@ it('shows a spending report grouped by category on the dashboard', function () {
         'occurred_at' => $recentDate,
     ]);
 
+    BankTransaction::factory()->for($account)->debit()->create([
+        'transaction_category_id' => $food->id,
+        'amount' => 999,
+        'occurred_at' => $recentDate,
+        'is_transfer' => true,
+    ]);
+
     BankTransaction::factory()->for($otherAccount)->debit()->create([
         'transaction_category_id' => $food->id,
         'amount' => 800,

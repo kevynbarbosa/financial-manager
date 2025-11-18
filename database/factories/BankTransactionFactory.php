@@ -29,6 +29,7 @@ class BankTransactionFactory extends Factory
             'metadata' => [
                 'source' => 'factory',
             ],
+            'is_transfer' => false,
         ];
     }
 

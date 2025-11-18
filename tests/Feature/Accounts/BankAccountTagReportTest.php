@@ -27,12 +27,19 @@ it('returns tagged transactions data and tag reports on the accounts screen', fu
     ]);
     $olderDebit->tags()->attach([$incomeTag->id, $expenseTag->id]);
 
+    $transfer = BankTransaction::factory()->for($account)->debit()->create([
+        'amount' => 900,
+        'occurred_at' => now()->subDays(2),
+        'is_transfer' => true,
+    ]);
+    $transfer->tags()->attach($expenseTag);
+
     actingAs($user);
 
     $this->get(route('accounts.index'))
         ->assertInertia(fn (Assert $page) => $page
             ->component('accounts/Index')
-            ->has('transactions.data', 2)
+            ->has('transactions.data', 3)
             ->where('transactions.data.0.tags.0.name', $incomeTag->name)
             ->where('tagReports.totals.credit', 5000.0)
             ->where('tagReports.totals.debit', 1200.0)
@@ -41,5 +48,6 @@ it('returns tagged transactions data and tag reports on the accounts screen', fu
             ->where('tagReports.breakdown.0.debit', 1200.0)
             ->where('tagReports.breakdown.1.name', $expenseTag->name)
             ->where('tagReports.breakdown.1.debit', 1200.0)
+            ->where('transactions.data.2.is_transfer', true)
         );
 });

@@ -49,6 +49,7 @@ class DashboardController extends Controller
             })
             ->where('bank_accounts.user_id', $userId)
             ->where('bank_transactions.type', 'debit')
+            ->where('bank_transactions.is_transfer', false)
             ->whereBetween('bank_transactions.occurred_at', [
                 $startDate->copy()->startOfDay(),
                 $endDate->copy()->endOfDay(),

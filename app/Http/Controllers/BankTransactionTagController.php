@@ -58,6 +58,7 @@ class BankTransactionTagController extends Controller
                 'description' => $transaction->description,
                 'amount' => (float) $transaction->amount,
                 'type' => $transaction->type,
+                'is_transfer' => (bool) $transaction->is_transfer,
                 'occurred_at' => optional($transaction->occurred_at)->toDateTimeString(),
                 'account' => [
                     'id' => $transaction->account->id,
@@ -102,6 +103,7 @@ class BankTransactionTagController extends Controller
             'description' => $validated['description'],
             'transaction_category_id' => $categoryId,
             'category' => $categoryName,
+            'is_transfer' => (bool) ($validated['is_transfer'] ?? false),
         ]);
 
         $tagNames = collect($validated['tags'] ?? [])

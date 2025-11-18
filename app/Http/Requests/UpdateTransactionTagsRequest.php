@@ -18,6 +18,7 @@ class UpdateTransactionTagsRequest extends FormRequest
             'tags' => ['nullable', 'array'],
             'tags.*' => ['string', 'max:50'],
             'category_id' => ['nullable', 'integer', 'exists:transaction_categories,id'],
+            'is_transfer' => ['nullable', 'boolean'],
         ];
     }
 }

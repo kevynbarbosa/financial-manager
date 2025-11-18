@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DataTablePagination from '@/components/common/DataTablePagination.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -459,6 +460,10 @@ const categoryFilterOptions = computed(() => {
                             </TableCell>
                             <TableCell>
                                 <p class="font-medium text-foreground">{{ transaction.description }}</p>
+                                <div v-if="transaction.is_transfer" class="mt-1 flex items-center gap-2">
+                                    <Badge variant="warning">Transferência entre contas</Badge>
+                                    <span class="text-xs text-muted-foreground">Ignorada em relatórios</span>
+                                </div>
                             </TableCell>
                             <TableCell>
                                 <DropdownMenu>
