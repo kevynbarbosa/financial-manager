@@ -3,31 +3,31 @@ import DataTablePagination from '@/components/common/DataTablePagination.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatDateTime } from '@/lib/date-utils';
-import { index as accountsIndex } from '@/routes/accounts';
-import { edit as transactionTagsEdit } from '@/routes/transactions/tags';
-import { update as updateTransactionCategoryRoute } from '@/routes/transactions/category';
 import { formatCurrency } from '@/pages/accounts/utils';
+import { index as accountsIndex } from '@/routes/accounts';
+import { update as updateTransactionCategoryRoute } from '@/routes/transactions/category';
+import { edit as transactionTagsEdit } from '@/routes/transactions/tags';
 import type { BankTransaction, PaginatedResource, TransactionCategoryOption, TransactionFilters } from '@/types/accounts';
 import { router } from '@inertiajs/vue3';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
     ArrowDown,
     ArrowDownRight,
     ArrowUp,
     ArrowUpDown,
     ArrowUpRight,
-    Filter,
-    Pencil,
     Car,
     Check,
     Coffee,
     CreditCard,
     Dumbbell,
+    Filter,
     Gift,
     Home,
+    Pencil,
     PiggyBank,
     ShoppingBag,
     Store,
@@ -98,7 +98,7 @@ const props = withDefaults(
         }),
         accountOptions: () => [],
         categoryOptions: () => [],
-    }
+    },
 );
 
 const filterState = reactive<FilterFormState>({
@@ -116,12 +116,7 @@ const isLoading = ref(false);
 
 const hasActiveFilters = computed(() => {
     return Boolean(
-        filterState.search ||
-            filterState.type ||
-            filterState.account ||
-            filterState.start_date ||
-            filterState.end_date ||
-            filterState.category
+        filterState.search || filterState.type || filterState.account || filterState.start_date || filterState.end_date || filterState.category,
     );
 });
 
@@ -196,7 +191,7 @@ watch(
         filterState.category = currentFilters?.category ?? '';
         filterState.sort = currentFilters?.sort ?? defaultSortColumn;
         filterState.direction = currentFilters?.direction ?? defaultSortDirection;
-    }
+    },
 );
 
 const toggleSort = (column: SortColumn) => {
@@ -277,12 +272,16 @@ const iconComponents: Record<string, any> = {
 };
 
 const categoryFilterOptions = computed(() => {
-    const base = [{ value: '', label: 'Todas as categorias' }, { value: 'none', label: 'Sem categoria' }];
+    const base = [
+        { value: '', label: 'Todas as categorias' },
+        { value: 'none', label: 'Sem categoria' },
+    ];
 
-    const categories = props.categoryOptions?.map((category) => ({
-        value: String(category.id),
-        label: category.name,
-    })) ?? [];
+    const categories =
+        props.categoryOptions?.map((category) => ({
+            value: String(category.id),
+            label: category.name,
+        })) ?? [];
 
     return [...base, ...categories];
 });
@@ -313,19 +312,14 @@ const categoryFilterOptions = computed(() => {
                 <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                     <div class="space-y-1">
                         <label class="text-xs font-medium text-muted-foreground" for="transaction-search">Buscar</label>
-                        <Input
-                            id="transaction-search"
-                            v-model="filterState.search"
-                            type="text"
-                            placeholder="Descrição ou categoria"
-                        />
+                        <Input id="transaction-search" v-model="filterState.search" type="text" placeholder="Descrição ou categoria" />
                     </div>
                     <div class="space-y-1">
                         <label class="text-xs font-medium text-muted-foreground" for="transaction-category">Categoria</label>
                         <select
                             id="transaction-category"
                             v-model="filterState.category"
-                            class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                         >
                             <option v-for="option in categoryFilterOptions" :key="option.value" :value="option.value">
                                 {{ option.label }}
@@ -337,7 +331,7 @@ const categoryFilterOptions = computed(() => {
                         <select
                             id="transaction-type"
                             v-model="filterState.type"
-                            class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                         >
                             <option value="">Todos</option>
                             <option value="credit">Crédito</option>
@@ -349,7 +343,7 @@ const categoryFilterOptions = computed(() => {
                         <select
                             id="transaction-account"
                             v-model="filterState.account"
-                            class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            class="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                         >
                             <option value="">Todas as contas</option>
                             <option v-for="option in accountOptions" :key="option.id" :value="option.value">
@@ -383,7 +377,10 @@ const categoryFilterOptions = computed(() => {
             </form>
 
             <div class="relative overflow-hidden rounded-lg border border-border/60 bg-card shadow-sm">
-                <div v-if="isLoading" class="absolute inset-0 z-10 flex items-center justify-center bg-background/60 text-sm font-medium text-muted-foreground">
+                <div
+                    v-if="isLoading"
+                    class="absolute inset-0 z-10 flex items-center justify-center bg-background/60 text-sm font-medium text-muted-foreground"
+                >
                     Carregando transações...
                 </div>
                 <Table :class="isLoading ? 'opacity-50' : ''">
@@ -455,14 +452,15 @@ const categoryFilterOptions = computed(() => {
                             <TableCell>
                                 <div class="flex flex-col">
                                     <span class="font-medium">{{ transaction.account.name }}</span>
-                                    <span class="text-xs text-muted-foreground">{{ transaction.account.institution || 'Instituição não informada' }}</span>
+                                    <span class="text-xs text-muted-foreground">{{
+                                        transaction.account.institution || 'Instituição não informada'
+                                    }}</span>
                                 </div>
                             </TableCell>
                             <TableCell>
                                 <p class="font-medium text-foreground">{{ transaction.description }}</p>
                                 <div v-if="transaction.is_transfer" class="mt-1 flex items-center gap-2">
                                     <Badge variant="warning">Transferência entre contas</Badge>
-                                    <span class="text-xs text-muted-foreground">Ignorada em relatórios</span>
                                 </div>
                             </TableCell>
                             <TableCell>
@@ -492,7 +490,7 @@ const categoryFilterOptions = computed(() => {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent class="min-w-[260px]">
                                         <DropdownMenuItem @click="updateTransactionCategory(transaction.id, 'none')">
-                                            <div class="flex items-center justify-between w-full">
+                                            <div class="flex w-full items-center justify-between">
                                                 <span>Sem categoria</span>
                                                 <Check v-if="!transaction.category" class="h-3.5 w-3.5 text-primary" />
                                             </div>
@@ -502,7 +500,7 @@ const categoryFilterOptions = computed(() => {
                                             :key="category.id"
                                             @click="updateTransactionCategory(transaction.id, String(category.id))"
                                         >
-                                            <div class="flex items-center justify-between w-full">
+                                            <div class="flex w-full items-center justify-between">
                                                 <span class="flex items-center gap-2">
                                                     <span
                                                         class="inline-flex h-6 w-6 items-center justify-center rounded-full border"
@@ -516,10 +514,7 @@ const categoryFilterOptions = computed(() => {
                                                     </span>
                                                     {{ category.name }}
                                                 </span>
-                                                <Check
-                                                    v-if="transaction.category?.id === category.id"
-                                                    class="h-3.5 w-3.5 text-primary"
-                                                />
+                                                <Check v-if="transaction.category?.id === category.id" class="h-3.5 w-3.5 text-primary" />
                                             </div>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -540,7 +535,11 @@ const categoryFilterOptions = computed(() => {
                             <TableCell>
                                 <span
                                     class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium"
-                                    :class="transaction.type === 'credit' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300'"
+                                    :class="
+                                        transaction.type === 'credit'
+                                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300'
+                                            : 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300'
+                                    "
                                 >
                                     <ArrowUpRight v-if="transaction.type === 'credit'" class="h-3.5 w-3.5" />
                                     <ArrowDownRight v-else class="h-3.5 w-3.5" />
@@ -549,7 +548,9 @@ const categoryFilterOptions = computed(() => {
                             </TableCell>
                             <TableCell class="text-right">
                                 <span
-                                    :class="transaction.type === 'credit' ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300'"
+                                    :class="
+                                        transaction.type === 'credit' ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300'
+                                    "
                                     class="font-semibold"
                                 >
                                     {{ formatCurrency(transaction.amount) }}
@@ -565,7 +566,7 @@ const categoryFilterOptions = computed(() => {
                                     :href="transactionTagModalUrl(transaction.id)"
                                     as="button"
                                     type="button"
-                                    class="inline-flex items-center justify-center gap-2 rounded-md border border-border/70 bg-background px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-70"
+                                    class="inline-flex items-center justify-center gap-2 rounded-md border border-border/70 bg-background px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
                                 >
                                     <Pencil class="h-3.5 w-3.5" />
                                     <span>Editar</span>
