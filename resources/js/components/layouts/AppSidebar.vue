@@ -25,14 +25,14 @@ import { BookOpen, CreditCard, Folder, LayoutGrid, ShieldUser, Users } from 'luc
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Controle de Contas',
-        href: accountsIndex(),
-        icon: CreditCard,
-    },
-    {
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Controle de Contas',
+        href: accountsIndex(),
+        icon: CreditCard,
     },
     {
         title: 'Categorias',
@@ -65,7 +65,6 @@ const footerNavItems: NavItem[] = [
         icon: BookOpen,
     },
 ];
-
 </script>
 
 <template>

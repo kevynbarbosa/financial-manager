@@ -25,7 +25,7 @@ interface Category {
     color: string | null;
 }
 
-const props = defineProps<{
+defineProps<{
     categories: Category[];
     iconOptions: string[];
     colorOptions: string[];
