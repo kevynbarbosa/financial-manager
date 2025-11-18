@@ -78,6 +78,9 @@ const props = withDefaults(
             account: null,
             start_date: '',
             end_date: '',
+            category: '',
+            sort: 'occurred_at',
+            direction: 'desc',
         }),
         tagReports: () => ({
             totals: {

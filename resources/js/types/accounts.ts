@@ -45,6 +45,8 @@ export type TransactionFilters = {
     start_date?: string;
     end_date?: string;
     category?: string;
+    sort?: 'occurred_at' | 'amount' | 'description';
+    direction?: 'asc' | 'desc';
 };
 
 export type PaginatedResource<T> = {

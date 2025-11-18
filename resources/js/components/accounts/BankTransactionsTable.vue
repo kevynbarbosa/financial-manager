@@ -13,7 +13,10 @@ import type { BankTransaction, PaginatedResource, TransactionCategoryOption, Tra
 import { router } from '@inertiajs/vue3';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
+    ArrowDown,
     ArrowDownRight,
+    ArrowUp,
+    ArrowUpDown,
     ArrowUpRight,
     Filter,
     Pencil,
@@ -37,6 +40,9 @@ type AccountOption = {
     value: string;
 };
 
+type SortColumn = NonNullable<TransactionFilters['sort']>;
+type SortDirection = NonNullable<TransactionFilters['direction']>;
+
 type FilterFormState = {
     search: string;
     type: string;
@@ -44,6 +50,17 @@ type FilterFormState = {
     start_date: string;
     end_date: string;
     category: string;
+    sort: SortColumn;
+    direction: SortDirection;
+};
+
+const defaultSortColumn: SortColumn = 'occurred_at';
+const defaultSortDirection: SortDirection = 'desc';
+
+const initialSortDirectionByColumn: Record<SortColumn, SortDirection> = {
+    description: 'asc',
+    amount: 'desc',
+    occurred_at: 'desc',
 };
 
 const props = withDefaults(
@@ -75,6 +92,8 @@ const props = withDefaults(
             start_date: '',
             end_date: '',
             category: '',
+            sort: defaultSortColumn,
+            direction: defaultSortDirection,
         }),
         accountOptions: () => [],
         categoryOptions: () => [],
@@ -88,6 +107,8 @@ const filterState = reactive<FilterFormState>({
     start_date: props.filters?.start_date ?? '',
     end_date: props.filters?.end_date ?? '',
     category: props.filters?.category ?? '',
+    sort: props.filters?.sort ?? defaultSortColumn,
+    direction: props.filters?.direction ?? defaultSortDirection,
 });
 
 const isLoading = ref(false);
@@ -130,6 +151,9 @@ const filtersPayload = computed(() => {
         payload.category = filterState.category;
     }
 
+    payload.sort = filterState.sort || defaultSortColumn;
+    payload.direction = filterState.direction || defaultSortDirection;
+
     return payload;
 });
 
@@ -155,6 +179,8 @@ const resetFilters = () => {
     filterState.start_date = '';
     filterState.end_date = '';
     filterState.category = '';
+    filterState.sort = defaultSortColumn;
+    filterState.direction = defaultSortDirection;
     submitFilters();
 };
 
@@ -167,8 +193,47 @@ watch(
         filterState.start_date = currentFilters?.start_date ?? '';
         filterState.end_date = currentFilters?.end_date ?? '';
         filterState.category = currentFilters?.category ?? '';
+        filterState.sort = currentFilters?.sort ?? defaultSortColumn;
+        filterState.direction = currentFilters?.direction ?? defaultSortDirection;
     }
 );
+
+const toggleSort = (column: SortColumn) => {
+    if (filterState.sort === column) {
+        filterState.direction = filterState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        filterState.sort = column;
+        filterState.direction = initialSortDirectionByColumn[column];
+    }
+
+    submitFilters();
+};
+
+const sortIconFor = (column: SortColumn) => {
+    if (filterState.sort !== column) {
+        return ArrowUpDown;
+    }
+
+    return filterState.direction === 'asc' ? ArrowUp : ArrowDown;
+};
+
+const ariaSortFor = (column: SortColumn): 'none' | 'ascending' | 'descending' => {
+    if (filterState.sort !== column) {
+        return 'none';
+    }
+
+    return filterState.direction === 'asc' ? 'ascending' : 'descending';
+};
+
+const sortButtonLabel = (column: SortColumn, label: string) => {
+    if (filterState.sort !== column) {
+        return `Ordenar por ${label}`;
+    }
+
+    const directionLabel = filterState.direction === 'asc' ? 'ascendente' : 'descendente';
+
+    return `Ordenar por ${label} (${directionLabel})`;
+};
 
 const transactionCountLabel = computed(() => {
     const from = props.transactions.from ?? 0;
@@ -324,12 +389,63 @@ const categoryFilterOptions = computed(() => {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Conta</TableHead>
-                            <TableHead>Descrição</TableHead>
+                            <TableHead :aria-sort="ariaSortFor('description')">
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center gap-1 text-left font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                                    :aria-pressed="filterState.sort === 'description'"
+                                    :aria-label="sortButtonLabel('description', 'descrição')"
+                                    :title="sortButtonLabel('description', 'descrição')"
+                                    :disabled="isLoading"
+                                    @click="toggleSort('description')"
+                                >
+                                    Descrição
+                                    <component
+                                        :is="sortIconFor('description')"
+                                        class="h-3.5 w-3.5"
+                                        :class="filterState.sort === 'description' ? 'text-foreground' : 'text-muted-foreground/70'"
+                                    />
+                                </button>
+                            </TableHead>
                             <TableHead>Categoria</TableHead>
                             <TableHead>Tags</TableHead>
                             <TableHead>Tipo</TableHead>
-                            <TableHead class="text-right">Valor</TableHead>
-                            <TableHead>Data</TableHead>
+                            <TableHead class="text-right" :aria-sort="ariaSortFor('amount')">
+                                <button
+                                    type="button"
+                                    class="ml-auto inline-flex items-center gap-1 text-right font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                                    :aria-pressed="filterState.sort === 'amount'"
+                                    :aria-label="sortButtonLabel('amount', 'valor')"
+                                    :title="sortButtonLabel('amount', 'valor')"
+                                    :disabled="isLoading"
+                                    @click="toggleSort('amount')"
+                                >
+                                    Valor
+                                    <component
+                                        :is="sortIconFor('amount')"
+                                        class="h-3.5 w-3.5"
+                                        :class="filterState.sort === 'amount' ? 'text-foreground' : 'text-muted-foreground/70'"
+                                    />
+                                </button>
+                            </TableHead>
+                            <TableHead :aria-sort="ariaSortFor('occurred_at')">
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center gap-1 text-left font-medium transition-colors hover:text-foreground focus-visible:outline-none"
+                                    :aria-pressed="filterState.sort === 'occurred_at'"
+                                    :aria-label="sortButtonLabel('occurred_at', 'data')"
+                                    :title="sortButtonLabel('occurred_at', 'data')"
+                                    :disabled="isLoading"
+                                    @click="toggleSort('occurred_at')"
+                                >
+                                    Data
+                                    <component
+                                        :is="sortIconFor('occurred_at')"
+                                        class="h-3.5 w-3.5"
+                                        :class="filterState.sort === 'occurred_at' ? 'text-foreground' : 'text-muted-foreground/70'"
+                                    />
+                                </button>
+                            </TableHead>
                             <TableHead class="text-right">Ações</TableHead>
                         </TableRow>
                     </TableHeader>

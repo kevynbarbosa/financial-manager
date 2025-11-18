@@ -40,6 +40,15 @@ class BankAccountController extends Controller
             'category' => $request->string('category')->toString(),
         ];
 
+        $allowedSorts = ['occurred_at', 'amount', 'description'];
+        $allowedDirections = ['asc', 'desc'];
+
+        $requestedSort = $request->string('sort')->toString();
+        $requestedDirection = $request->string('direction')->toString();
+
+        $transactionFilters['sort'] = in_array($requestedSort, $allowedSorts, true) ? $requestedSort : 'occurred_at';
+        $transactionFilters['direction'] = in_array($requestedDirection, $allowedDirections, true) ? $requestedDirection : 'desc';
+
         $transactionCategories = TransactionCategory::query()
             ->where('user_id', $user->id)
             ->orderBy('name')
@@ -103,7 +112,7 @@ class BankAccountController extends Controller
                     $query->where('transaction_category_id', (int) $category);
                 }
             })
-            ->latest('occurred_at')
+            ->orderBy($transactionFilters['sort'], $transactionFilters['direction'])
             ->paginate(10)
             ->withQueryString()
             ->through(function (BankTransaction $transaction) {
