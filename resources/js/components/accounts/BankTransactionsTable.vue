@@ -3,7 +3,6 @@ import DataTablePagination from '@/components/common/DataTablePagination.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatDateTime } from '@/lib/date-utils';
@@ -11,6 +10,8 @@ import { formatCurrency } from '@/pages/accounts/utils';
 import { index as accountsIndex } from '@/routes/accounts';
 import { update as updateTransactionCategoryRoute } from '@/routes/transactions/category';
 import { edit as editTransaction } from '@/routes/transactions';
+import TransactionCategoryDropdown from '@/components/accounts/TransactionCategoryDropdown.vue';
+import { useTransactionFilters, type SortColumn, type SortDirection } from '@/composables/useTransactionFilters';
 import type { BankTransaction, PaginatedResource, TransactionCategoryOption, TransactionFilters } from '@/types/accounts';
 import { router } from '@inertiajs/vue3';
 import {
@@ -19,21 +20,10 @@ import {
     ArrowUp,
     ArrowUpDown,
     ArrowUpRight,
-    Car,
-    Check,
-    Coffee,
-    CreditCard,
-    Dumbbell,
     Filter,
-    Gift,
-    Home,
     Pencil,
-    PiggyBank,
-    ShoppingBag,
-    Store,
-    Wallet,
 } from 'lucide-vue-next';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 
 type AccountOption = {
     id: number;
@@ -41,22 +31,8 @@ type AccountOption = {
     value: string;
 };
 
-type SortColumn = NonNullable<TransactionFilters['sort']>;
-type SortDirection = NonNullable<TransactionFilters['direction']>;
-
-type FilterFormState = {
-    search: string;
-    type: string;
-    account: string;
-    start_date: string;
-    end_date: string;
-    category: string;
-    sort: SortColumn;
-    direction: SortDirection;
-};
-
 const defaultSortColumn: SortColumn = 'occurred_at';
-const defaultSortDirection: SortDirection = 'desc';
+const defaultSortDirection = 'desc';
 
 const initialSortDirectionByColumn: Record<SortColumn, SortDirection> = {
     description: 'asc',
@@ -101,57 +77,27 @@ const props = withDefaults(
     },
 );
 
-const filterState = reactive<FilterFormState>({
-    search: props.filters?.search ?? '',
-    type: props.filters?.type ?? '',
-    account: props.filters?.account ? String(props.filters.account) : '',
-    start_date: props.filters?.start_date ?? '',
-    end_date: props.filters?.end_date ?? '',
-    category: props.filters?.category ?? '',
-    sort: props.filters?.sort ?? defaultSortColumn,
-    direction: props.filters?.direction ?? defaultSortDirection,
-});
+const filtersSource = computed(() => props.filters);
+
+const {
+    filterState,
+    hasActiveFilters,
+    filtersPayload,
+    resetFilters: resetFilterState,
+    toggleSort: toggleSortState,
+    ariaSortFor,
+    sortButtonLabel,
+    getSortDirection,
+} = useTransactionFilters(
+    () => filtersSource.value,
+    {
+        defaultSort: defaultSortColumn,
+        defaultDirection: defaultSortDirection,
+        initialSortDirectionByColumn,
+    },
+);
 
 const isLoading = ref(false);
-
-const hasActiveFilters = computed(() => {
-    return Boolean(
-        filterState.search || filterState.type || filterState.account || filterState.start_date || filterState.end_date || filterState.category,
-    );
-});
-
-const filtersPayload = computed(() => {
-    const payload: Record<string, string> = {};
-
-    if (filterState.search) {
-        payload.search = filterState.search;
-    }
-
-    if (filterState.type) {
-        payload.type = filterState.type;
-    }
-
-    if (filterState.account) {
-        payload.account = filterState.account;
-    }
-
-    if (filterState.start_date) {
-        payload.start_date = filterState.start_date;
-    }
-
-    if (filterState.end_date) {
-        payload.end_date = filterState.end_date;
-    }
-
-    if (filterState.category) {
-        payload.category = filterState.category;
-    }
-
-    payload.sort = filterState.sort || defaultSortColumn;
-    payload.direction = filterState.direction || defaultSortDirection;
-
-    return payload;
-});
 
 const submitFilters = () => {
     router.get(accountsIndex().url, filtersPayload.value, {
@@ -169,66 +115,23 @@ const submitFilters = () => {
 };
 
 const resetFilters = () => {
-    filterState.search = '';
-    filterState.type = '';
-    filterState.account = '';
-    filterState.start_date = '';
-    filterState.end_date = '';
-    filterState.category = '';
-    filterState.sort = defaultSortColumn;
-    filterState.direction = defaultSortDirection;
+    resetFilterState();
     submitFilters();
 };
 
-watch(
-    () => props.filters,
-    (currentFilters) => {
-        filterState.search = currentFilters?.search ?? '';
-        filterState.type = currentFilters?.type ?? '';
-        filterState.account = currentFilters?.account ? String(currentFilters.account) : '';
-        filterState.start_date = currentFilters?.start_date ?? '';
-        filterState.end_date = currentFilters?.end_date ?? '';
-        filterState.category = currentFilters?.category ?? '';
-        filterState.sort = currentFilters?.sort ?? defaultSortColumn;
-        filterState.direction = currentFilters?.direction ?? defaultSortDirection;
-    },
-);
-
-const toggleSort = (column: SortColumn) => {
-    if (filterState.sort === column) {
-        filterState.direction = filterState.direction === 'asc' ? 'desc' : 'asc';
-    } else {
-        filterState.sort = column;
-        filterState.direction = initialSortDirectionByColumn[column];
-    }
-
+const handleSort = (column: SortColumn) => {
+    toggleSortState(column);
     submitFilters();
 };
 
 const sortIconFor = (column: SortColumn) => {
-    if (filterState.sort !== column) {
+    const direction = getSortDirection(column);
+
+    if (!direction) {
         return ArrowUpDown;
     }
 
-    return filterState.direction === 'asc' ? ArrowUp : ArrowDown;
-};
-
-const ariaSortFor = (column: SortColumn): 'none' | 'ascending' | 'descending' => {
-    if (filterState.sort !== column) {
-        return 'none';
-    }
-
-    return filterState.direction === 'asc' ? 'ascending' : 'descending';
-};
-
-const sortButtonLabel = (column: SortColumn, label: string) => {
-    if (filterState.sort !== column) {
-        return `Ordenar por ${label}`;
-    }
-
-    const directionLabel = filterState.direction === 'asc' ? 'ascendente' : 'descendente';
-
-    return `Ordenar por ${label} (${directionLabel})`;
+    return direction === 'asc' ? ArrowUp : ArrowDown;
 };
 
 const transactionCountLabel = computed(() => {
@@ -242,12 +145,12 @@ const transactionCountLabel = computed(() => {
 const tableIsEmpty = computed(() => !props.transactions.data.length && !isLoading.value);
 
 const transactionDetailsModalUrl = (transactionId: number) => editTransaction(transactionId).url;
-const updateTransactionCategory = (transactionId: number, categoryValue: string) => {
+const updateTransactionCategory = (transactionId: number, categoryValue: string | null) => {
     const payload = {
-        category_id: categoryValue === 'none' ? null : Number(categoryValue),
+        category_id: categoryValue ? Number(categoryValue) : null,
     };
 
-    if (Number.isNaN(payload.category_id as number)) {
+    if (payload.category_id !== null && Number.isNaN(payload.category_id)) {
         payload.category_id = null;
     }
 
@@ -256,19 +159,6 @@ const updateTransactionCategory = (transactionId: number, categoryValue: string)
         preserveState: true,
         only: ['transactions', 'transactionFilters'],
     });
-};
-
-const iconComponents: Record<string, any> = {
-    wallet: Wallet,
-    'credit-card': CreditCard,
-    'shopping-bag': ShoppingBag,
-    store: Store,
-    'piggy-bank': PiggyBank,
-    car: Car,
-    home: Home,
-    gift: Gift,
-    coffee: Coffee,
-    dumbbell: Dumbbell,
 };
 
 const categoryFilterOptions = computed(() => {
@@ -395,7 +285,7 @@ const categoryFilterOptions = computed(() => {
                                     :aria-label="sortButtonLabel('description', 'descrição')"
                                     :title="sortButtonLabel('description', 'descrição')"
                                     :disabled="isLoading"
-                                    @click="toggleSort('description')"
+                                    @click="handleSort('description')"
                                 >
                                     Descrição
                                     <component
@@ -415,7 +305,7 @@ const categoryFilterOptions = computed(() => {
                                     :aria-label="sortButtonLabel('amount', 'valor')"
                                     :title="sortButtonLabel('amount', 'valor')"
                                     :disabled="isLoading"
-                                    @click="toggleSort('amount')"
+                                    @click="handleSort('amount')"
                                 >
                                     Valor
                                     <component
@@ -433,7 +323,7 @@ const categoryFilterOptions = computed(() => {
                                     :aria-label="sortButtonLabel('occurred_at', 'data')"
                                     :title="sortButtonLabel('occurred_at', 'data')"
                                     :disabled="isLoading"
-                                    @click="toggleSort('occurred_at')"
+                                    @click="handleSort('occurred_at')"
                                 >
                                     Data
                                     <component
@@ -463,61 +353,12 @@ const categoryFilterOptions = computed(() => {
                                 </div>
                             </TableCell>
                             <TableCell>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger as-child>
-                                        <button
-                                            type="button"
-                                            class="flex w-full items-center justify-between rounded-md border border-border/60 px-3 py-2 text-left text-sm font-medium transition hover:border-primary"
-                                        >
-                                            <span class="flex items-center gap-2">
-                                                <span
-                                                    class="inline-flex h-6 w-6 items-center justify-center rounded-full border"
-                                                    :style="{ backgroundColor: transaction.category?.color || 'transparent' }"
-                                                >
-                                                    <component
-                                                        v-if="transaction.category?.icon && iconComponents[transaction.category.icon]"
-                                                        :is="iconComponents[transaction.category.icon]"
-                                                        class="h-3.5 w-3.5 text-background"
-                                                    />
-                                                </span>
-                                                <span>
-                                                    {{ transaction.category?.name ?? 'Sem categoria' }}
-                                                </span>
-                                            </span>
-                                            <Pencil class="h-3.5 w-3.5 text-muted-foreground" />
-                                        </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent class="min-w-[260px]">
-                                        <DropdownMenuItem @click="updateTransactionCategory(transaction.id, 'none')">
-                                            <div class="flex w-full items-center justify-between">
-                                                <span>Sem categoria</span>
-                                                <Check v-if="!transaction.category" class="h-3.5 w-3.5 text-primary" />
-                                            </div>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            v-for="category in props.categoryOptions"
-                                            :key="category.id"
-                                            @click="updateTransactionCategory(transaction.id, String(category.id))"
-                                        >
-                                            <div class="flex w-full items-center justify-between">
-                                                <span class="flex items-center gap-2">
-                                                    <span
-                                                        class="inline-flex h-6 w-6 items-center justify-center rounded-full border"
-                                                        :style="{ backgroundColor: category.color || 'transparent' }"
-                                                    >
-                                                        <component
-                                                            v-if="category.icon && iconComponents[category.icon]"
-                                                            :is="iconComponents[category.icon]"
-                                                            class="h-3.5 w-3.5 text-background"
-                                                        />
-                                                    </span>
-                                                    {{ category.name }}
-                                                </span>
-                                                <Check v-if="transaction.category?.id === category.id" class="h-3.5 w-3.5 text-primary" />
-                                            </div>
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                <TransactionCategoryDropdown
+                                    :selected="transaction.category"
+                                    :options="props.categoryOptions"
+                                    :disabled="isLoading"
+                                    @select="(value) => updateTransactionCategory(transaction.id, value)"
+                                />
                             </TableCell>
                             <TableCell>
                                 <span
