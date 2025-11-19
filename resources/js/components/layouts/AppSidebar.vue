@@ -17,11 +17,12 @@ import {
 import { dashboard } from '@/routes';
 import { index as accountsIndex } from '@/routes/accounts';
 import { index as categoriesIndex } from '@/routes/categories';
+import { index as categoryLimitsIndex } from '@/routes/category-limits';
 import { index as rolesIndex } from '@/routes/roles';
 import { index as usersIndex } from '@/routes/users';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, CreditCard, Folder, LayoutGrid, ShieldUser, Users } from 'lucide-vue-next';
+import { BookOpen, CreditCard, Folder, GaugeCircle, LayoutGrid, ShieldUser, Users } from 'lucide-vue-next';
 
 const mainNavItems: NavItem[] = [
     {
@@ -38,6 +39,11 @@ const mainNavItems: NavItem[] = [
         title: 'Categorias',
         href: categoriesIndex.url(),
         icon: Folder,
+    },
+    {
+        title: 'Limites por categoria',
+        href: categoryLimitsIndex.url(),
+        icon: GaugeCircle,
     },
 
     {

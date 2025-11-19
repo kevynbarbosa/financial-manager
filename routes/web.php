@@ -3,6 +3,7 @@
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankTransactionController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CategoryLimitController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
@@ -29,6 +30,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('categories/create', [CategoryController::class, 'create'])->name('categories.create');
     Route::get('categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
     Route::resource('categories', CategoryController::class)->except(['show', 'create', 'edit']);
+    Route::resource('category-limits', CategoryLimitController::class)->only(['index', 'store', 'update', 'destroy']);
 
     Route::resource('users', UserController::class);
     Route::get('users/{user}/permissions', [UserController::class, 'permissions'])->name('users.permissions');

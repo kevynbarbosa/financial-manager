@@ -122,4 +122,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(TransactionCategory::class);
     }
+
+    public function categoryLimits(): HasMany
+    {
+        return $this->hasMany(CategoryLimit::class);
+    }
 }
