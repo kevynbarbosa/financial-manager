@@ -10,7 +10,7 @@ import { formatDateTime } from '@/lib/date-utils';
 import { formatCurrency } from '@/pages/accounts/utils';
 import { index as accountsIndex } from '@/routes/accounts';
 import { update as updateTransactionCategoryRoute } from '@/routes/transactions/category';
-import { edit as transactionTagsEdit } from '@/routes/transactions/tags';
+import { edit as editTransaction } from '@/routes/transactions';
 import type { BankTransaction, PaginatedResource, TransactionCategoryOption, TransactionFilters } from '@/types/accounts';
 import { router } from '@inertiajs/vue3';
 import {
@@ -241,7 +241,7 @@ const transactionCountLabel = computed(() => {
 
 const tableIsEmpty = computed(() => !props.transactions.data.length && !isLoading.value);
 
-const transactionTagModalUrl = (transactionId: number) => transactionTagsEdit(transactionId).url;
+const transactionDetailsModalUrl = (transactionId: number) => editTransaction(transactionId).url;
 const updateTransactionCategory = (transactionId: number, categoryValue: string) => {
     const payload = {
         category_id: categoryValue === 'none' ? null : Number(categoryValue),
@@ -406,7 +406,6 @@ const categoryFilterOptions = computed(() => {
                                 </button>
                             </TableHead>
                             <TableHead>Categoria</TableHead>
-                            <TableHead>Tags</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead class="text-right" :aria-sort="ariaSortFor('amount')">
                                 <button
@@ -521,18 +520,6 @@ const categoryFilterOptions = computed(() => {
                                 </DropdownMenu>
                             </TableCell>
                             <TableCell>
-                                <div class="flex flex-wrap gap-1">
-                                    <span
-                                        v-for="tag in transaction.tags"
-                                        :key="tag.id"
-                                        class="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground"
-                                    >
-                                        {{ tag.name }}
-                                    </span>
-                                    <span v-if="!transaction.tags.length" class="text-xs text-muted-foreground">Sem tags</span>
-                                </div>
-                            </TableCell>
-                            <TableCell>
                                 <span
                                     class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium"
                                     :class="
@@ -563,7 +550,7 @@ const categoryFilterOptions = computed(() => {
                             </TableCell>
                             <TableCell class="text-right">
                                 <ModalLink
-                                    :href="transactionTagModalUrl(transaction.id)"
+                                    :href="transactionDetailsModalUrl(transaction.id)"
                                     as="button"
                                     type="button"
                                     class="inline-flex items-center justify-center gap-2 rounded-md border border-border/70 bg-background px-3 py-2 text-xs font-medium text-foreground transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
@@ -576,7 +563,7 @@ const categoryFilterOptions = computed(() => {
                     </TableBody>
                     <TableBody v-else>
                         <TableRow>
-                            <TableCell class="text-center text-sm text-muted-foreground" colspan="8">
+                            <TableCell class="text-center text-sm text-muted-foreground" colspan="7">
                                 Nenhuma transação encontrada para os filtros selecionados.
                             </TableCell>
                         </TableRow>

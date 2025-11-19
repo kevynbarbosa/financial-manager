@@ -55,6 +55,26 @@ class TransactionCategorySeeder extends Seeder
                 'icon' => 'piggy-bank',
                 'color' => '#22d3ee',
             ],
+            [
+                'name' => 'Worktools',
+                'icon' => 'piggy-bank',
+                'color' => '#22d3ee',
+            ],
+            [
+                'name' => 'Taxas e Juros',
+                'icon' => 'piggy-bank',
+                'color' => '#22d3ee',
+            ],
+            [
+                'name' => 'Rendimentos',
+                'icon' => 'piggy-bank',
+                'color' => '#22d3ee',
+            ],
+            [
+                'name' => 'Salário',
+                'icon' => 'piggy-bank',
+                'color' => '#22d3ee',
+            ],
         ];
 
         $users->each(function (User $user) use ($categories) {

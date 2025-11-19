@@ -2,29 +2,26 @@
 
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
-use App\Models\Tag;
 use App\Models\TransactionCategory;
 use App\Models\User;
 
 use function Pest\Laravel\actingAs;
 
-it('updates a transaction description and tags for the authenticated user', function () {
+it('updates a transaction description, category and transfer flag', function () {
     $user = User::factory()->create();
     $account = BankAccount::factory()->for($user)->create();
     $transaction = BankTransaction::factory()->for($account)->create([
         'description' => 'Pagamento antigo',
+        'is_transfer' => false,
     ]);
-    $existingTag = Tag::factory()->for($user)->create(['name' => 'Essenciais']);
+    $category = TransactionCategory::factory()->for($user)->create(['name' => 'Serviços']);
 
     actingAs($user);
 
-    $category = TransactionCategory::factory()->for($user)->create(['name' => 'Serviços']);
-
     $response = $this
         ->from(route('accounts.index'))
-        ->put(route('transactions.tags.update', $transaction), [
+        ->put(route('transactions.update', $transaction), [
             'description' => 'Pagamento atualizado',
-            'tags' => [$existingTag->name, 'Educação'],
             'category_id' => $category->id,
             'is_transfer' => true,
         ]);
@@ -32,18 +29,10 @@ it('updates a transaction description and tags for the authenticated user', func
     $response->assertRedirect(route('accounts.index'));
 
     $transaction->refresh();
-    $transaction->load('tags');
 
     expect($transaction->description)->toBe('Pagamento atualizado');
     expect($transaction->transaction_category_id)->toBe($category->id);
     expect($transaction->is_transfer)->toBeTrue();
-    expect($transaction->tags)->toHaveCount(2);
-    expect($transaction->tags->pluck('name')->all())->toEqualCanonicalizing(['Essenciais', 'Educação']);
-
-    $this->assertDatabaseHas('tags', [
-        'user_id' => $user->id,
-        'name' => 'Educação',
-    ]);
 });
 
 it('prevents users from updating transactions they do not own', function () {
@@ -55,10 +44,10 @@ it('prevents users from updating transactions they do not own', function () {
     actingAs($otherUser);
 
     $this
-        ->put(route('transactions.tags.update', $transaction), [
+        ->put(route('transactions.update', $transaction), [
             'description' => 'Tentativa inválida',
-            'tags' => ['Fraude'],
             'category_id' => null,
+            'is_transfer' => false,
         ])
         ->assertForbidden();
 });

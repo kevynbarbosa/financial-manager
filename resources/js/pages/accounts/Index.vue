@@ -18,13 +18,12 @@ export default {
 <script setup lang="ts">
 import BankAccountCard from '@/components/accounts/BankAccountCard.vue';
 import BankTransactionsTable from '@/components/accounts/BankTransactionsTable.vue';
-import TagBreakdownCard from '@/components/accounts/TagBreakdownCard.vue';
 import ContainerDefault from '@/components/layouts/ContainerDefault.vue';
 import Button from '@/components/ui/button/Button.vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/pages/accounts/utils';
 import { importOfx as importOfxRoute } from '@/routes/accounts';
-import type { BankAccount, BankTransaction, PaginatedResource, TagReports, TransactionFilters } from '@/types/accounts';
+import type { BankAccount, BankTransaction, PaginatedResource, TransactionCategoryOption, TransactionFilters } from '@/types/accounts';
 import type { PageProps as InertiaPageProps } from '@inertiajs/vue3';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { ArrowDownRight, ArrowUpRight, FileUp } from 'lucide-vue-next';
@@ -44,7 +43,6 @@ const props = withDefaults(
         };
         transactions: PaginatedResource<BankTransaction>;
         transactionFilters: TransactionFilters;
-        tagReports: TagReports;
         transactionCategoryOptions: TransactionCategoryOption[];
     }>(),
     {
@@ -81,13 +79,6 @@ const props = withDefaults(
             category: '',
             sort: 'occurred_at',
             direction: 'desc',
-        }),
-        tagReports: () => ({
-            totals: {
-                credit: 0,
-                debit: 0,
-            },
-            breakdown: [],
         }),
         transactionCategoryOptions: () => [],
     },
@@ -260,9 +251,6 @@ const importStatusMessage = computed(() => flashMessage.value || importFeedback.
                 </div>
             </CardContent>
         </Card>
-
-        <TagBreakdownCard :reports="tagReports" />
-
         <BankTransactionsTable
             :transactions="transactions"
             :filters="transactionFilters"

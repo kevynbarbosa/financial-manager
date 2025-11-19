@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class BankTransaction extends Model
 {
@@ -34,11 +33,6 @@ class BankTransaction extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(BankAccount::class, 'bank_account_id');
-    }
-
-    public function tags(): BelongsToMany
-    {
-        return $this->belongsToMany(Tag::class)->withTimestamps();
     }
 
     public function categoryRelation(): BelongsTo

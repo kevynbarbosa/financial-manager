@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\BankAccountController;
-use App\Http\Controllers\BankTransactionTagController;
+use App\Http\Controllers\BankTransactionController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PermissionController;
@@ -23,9 +23,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('accounts/{account}/edit', [BankAccountController::class, 'edit'])->name('accounts.edit');
     Route::put('accounts/{account}', [BankAccountController::class, 'update'])->name('accounts.update');
     Route::post('accounts/import-ofx', [BankAccountController::class, 'importOfx'])->name('accounts.import-ofx');
-    Route::get('transactions/{transaction}/tags', [BankTransactionTagController::class, 'edit'])->name('transactions.tags.edit');
-    Route::put('transactions/{transaction}/tags', [BankTransactionTagController::class, 'update'])->name('transactions.tags.update');
-    Route::put('transactions/{transaction}/category', [BankTransactionTagController::class, 'updateCategory'])->name('transactions.category.update');
+    Route::get('transactions/{transaction}/edit', [BankTransactionController::class, 'edit'])->name('transactions.edit');
+    Route::put('transactions/{transaction}', [BankTransactionController::class, 'update'])->name('transactions.update');
+    Route::put('transactions/{transaction}/category', [BankTransactionController::class, 'updateCategory'])->name('transactions.category.update');
     Route::get('categories/create', [CategoryController::class, 'create'])->name('categories.create');
     Route::get('categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
     Route::resource('categories', CategoryController::class)->except(['show', 'create', 'edit']);

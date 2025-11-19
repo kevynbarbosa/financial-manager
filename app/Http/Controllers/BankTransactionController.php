@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\UpdateTransactionTagsRequest;
+use App\Http\Requests\UpdateBankTransactionRequest;
 use App\Http\Requests\UpdateTransactionCategoryRequest;
 use App\Models\BankTransaction;
-use App\Models\Tag;
 use App\Models\TransactionCategory;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +14,7 @@ use InertiaUI\Modal\Modal as ModalResponse;
 
 use function InertiaUI\Modal\back_from_modal;
 
-class BankTransactionTagController extends Controller
+class BankTransactionController extends Controller
 {
     public function edit(Request $request, BankTransaction $transaction): ModalResponse
     {
@@ -25,19 +24,7 @@ class BankTransactionTagController extends Controller
         $transaction->loadMissing([
             'account:id,name,institution,user_id',
             'categoryRelation:id,name,icon,color',
-            'tags:id,name',
         ]);
-
-        $availableTags = Tag::query()
-            ->where('user_id', $user->id)
-            ->orderBy('name')
-            ->get(['id', 'name'])
-            ->map(fn (Tag $tag) => [
-                'id' => $tag->id,
-                'name' => $tag->name,
-            ])
-            ->values()
-            ->all();
 
         $categoryOptions = TransactionCategory::query()
             ->where('user_id', $user->id)
@@ -52,7 +39,7 @@ class BankTransactionTagController extends Controller
             ->values()
             ->all();
 
-        return Inertia::modal('accounts/modals/ManageTransactionTags', [
+        return Inertia::modal('accounts/modals/ManageTransactionDetails', [
             'transaction' => [
                 'id' => $transaction->id,
                 'description' => $transaction->description,
@@ -71,17 +58,12 @@ class BankTransactionTagController extends Controller
                     'icon' => $transaction->categoryRelation->icon,
                     'color' => $transaction->categoryRelation->color,
                 ] : null,
-                'tags' => $transaction->tags->map(fn (Tag $tag) => [
-                    'id' => $tag->id,
-                    'name' => $tag->name,
-                ])->values()->all(),
             ],
-            'availableTags' => $availableTags,
             'categoryOptions' => $categoryOptions,
         ])->baseRoute('accounts.index');
     }
 
-    public function update(UpdateTransactionTagsRequest $request, BankTransaction $transaction): RedirectResponse
+    public function update(UpdateBankTransactionRequest $request, BankTransaction $transaction): RedirectResponse
     {
         $user = $request->user();
         $this->ensureOwnsTransaction($transaction, $user);
@@ -105,20 +87,6 @@ class BankTransactionTagController extends Controller
             'category' => $categoryName,
             'is_transfer' => (bool) ($validated['is_transfer'] ?? false),
         ]);
-
-        $tagNames = collect($validated['tags'] ?? [])
-            ->map(fn (string $name) => trim($name))
-            ->filter()
-            ->unique();
-
-        $tagIds = $tagNames->map(function (string $name) use ($user) {
-            return Tag::firstOrCreate([
-                'user_id' => $user->id,
-                'name' => $name,
-            ])->id;
-        });
-
-        $transaction->tags()->sync($tagIds->all());
 
         return back_from_modal()->with('success', 'Transação atualizada com sucesso.');
     }
@@ -149,18 +117,10 @@ class BankTransactionTagController extends Controller
 
     protected function ensureOwnsTransaction(BankTransaction $transaction, ?User $user): void
     {
-        abort_if(
-            ! $user,
-            403,
-            'Usuário não autenticado.'
-        );
+        abort_if(! $user, 403, 'Usuário não autenticado.');
 
         $transaction->loadMissing('account:id,user_id');
 
-        abort_if(
-            $transaction->account?->user_id !== $user->id,
-            403,
-            'Operação não permitida.'
-        );
+        abort_if($transaction->account?->user_id !== $user->id, 403, 'Operação não permitida.');
     }
 }

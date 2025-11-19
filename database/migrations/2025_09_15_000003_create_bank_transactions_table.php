@@ -18,6 +18,11 @@ return new class extends Migration {
             $table->enum('type', ['credit', 'debit']);
             $table->dateTime('occurred_at');
             $table->string('category')->nullable();
+            $table->foreignId('transaction_category_id')
+                ->nullable()
+                ->constrained('transaction_categories')
+                ->nullOnDelete();
+            $table->boolean('is_transfer')->default(false);
             $table->string('external_id')->nullable()->index();
             $table->json('metadata')->nullable();
             $table->timestamps();
