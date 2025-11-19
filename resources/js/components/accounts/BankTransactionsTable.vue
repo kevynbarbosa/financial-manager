@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DatePicker from '@/components/common/DatePicker.vue';
 import DataTablePagination from '@/components/common/DataTablePagination.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -243,9 +244,9 @@ const categoryFilterOptions = computed(() => {
                     </div>
                     <div class="space-y-1">
                         <label class="text-xs font-medium text-muted-foreground">Período</label>
-                        <div class="flex gap-2">
-                            <Input v-model="filterState.start_date" type="date" class="w-full" />
-                            <Input v-model="filterState.end_date" type="date" class="w-full" />
+                        <div class="grid gap-2 sm:grid-cols-2">
+                            <DatePicker v-model="filterState.start_date" placeholder="Data inicial" />
+                            <DatePicker v-model="filterState.end_date" placeholder="Data final" />
                         </div>
                     </div>
                 </div>
