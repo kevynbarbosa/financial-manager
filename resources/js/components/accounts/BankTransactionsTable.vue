@@ -200,7 +200,7 @@ const categoryFilterOptions = computed(() => {
         </CardHeader>
         <CardContent class="space-y-4">
             <form class="space-y-3" @submit.prevent="submitFilters">
-                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     <div class="space-y-1">
                         <label class="text-xs font-medium text-muted-foreground" for="transaction-search">Buscar</label>
                         <Input id="transaction-search" v-model="filterState.search" type="text" placeholder="Descrição ou categoria" />
@@ -242,7 +242,7 @@ const categoryFilterOptions = computed(() => {
                             </option>
                         </select>
                     </div>
-                    <div class="space-y-1">
+                    <div class="space-y-1 lg:col-span-3 xl:col-span-2">
                         <label class="text-xs font-medium text-muted-foreground">Período</label>
                         <div class="grid gap-2 sm:grid-cols-2">
                             <DatePicker v-model="filterState.start_date" placeholder="Data inicial" />
