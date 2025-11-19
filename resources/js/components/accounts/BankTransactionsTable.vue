@@ -12,6 +12,7 @@ import { index as accountsIndex } from '@/routes/accounts';
 import { update as updateTransactionCategoryRoute } from '@/routes/transactions/category';
 import { edit as editTransaction } from '@/routes/transactions';
 import TransactionCategoryDropdown from '@/components/accounts/TransactionCategoryDropdown.vue';
+import { useSharedDateFilters } from '@/composables/useSharedDateFilters';
 import { useTransactionFilters, type SortColumn, type SortDirection } from '@/composables/useTransactionFilters';
 import type { BankTransaction, PaginatedResource, TransactionCategoryOption, TransactionFilters } from '@/types/accounts';
 import { router } from '@inertiajs/vue3';
@@ -24,7 +25,7 @@ import {
     Filter,
     Pencil,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
 type AccountOption = {
     id: number;
@@ -98,9 +99,14 @@ const {
     },
 );
 
+const { getSharedDateFilters, setSharedDateFilters } = useSharedDateFilters();
+let allowSharedSyncFromProps = false;
+const normalizeDateValue = (value?: string | null) => value ?? '';
 const isLoading = ref(false);
 
 const submitFilters = () => {
+    setSharedDateFilters(normalizeDateValue(filterState.start_date), normalizeDateValue(filterState.end_date));
+
     router.get(accountsIndex().url, filtersPayload.value, {
         preserveState: true,
         preserveScroll: true,
@@ -176,6 +182,37 @@ const categoryFilterOptions = computed(() => {
 
     return [...base, ...categories];
 });
+
+onMounted(() => {
+    const sharedFilters = getSharedDateFilters();
+    const sharedStart = normalizeDateValue(sharedFilters.start);
+    const sharedEnd = normalizeDateValue(sharedFilters.end);
+    const hasSharedFilters = Boolean(sharedStart || sharedEnd);
+    const startDiffers = sharedStart !== normalizeDateValue(filterState.start_date);
+    const endDiffers = sharedEnd !== normalizeDateValue(filterState.end_date);
+
+    if (hasSharedFilters && (startDiffers || endDiffers)) {
+        filterState.start_date = sharedStart;
+        filterState.end_date = sharedEnd;
+        submitFilters();
+    } else if (!hasSharedFilters) {
+        setSharedDateFilters(normalizeDateValue(filterState.start_date), normalizeDateValue(filterState.end_date));
+    }
+
+    allowSharedSyncFromProps = true;
+});
+
+watch(
+    filtersSource,
+    (current) => {
+        if (!allowSharedSyncFromProps) {
+            return;
+        }
+
+        setSharedDateFilters(normalizeDateValue(current?.start_date), normalizeDateValue(current?.end_date));
+    },
+    { deep: true }
+);
 </script>
 
 <template>

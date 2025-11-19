@@ -16,11 +16,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+import DatePicker from '@/components/common/DatePicker.vue';
 import ContainerDefault from '@/components/layouts/ContainerDefault.vue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useSharedDateFilters } from '@/composables/useSharedDateFilters';
 import { formatCurrency } from '@/pages/accounts/utils';
 import { Head, router } from '@inertiajs/vue3';
 import {
@@ -35,7 +36,7 @@ import {
     Store,
     Wallet,
 } from 'lucide-vue-next';
-import { computed, reactive, ref, type Component, watch } from 'vue';
+import { computed, onMounted, reactive, ref, type Component, watch } from 'vue';
 
 type CategorySpendingItem = {
     id: number | null;
@@ -126,8 +127,14 @@ const filterState = reactive({
 });
 const isFiltering = ref(false);
 const filtersApplied = computed(() => Boolean(filterState.start_date || filterState.end_date));
+const { getSharedDateFilters, setSharedDateFilters } = useSharedDateFilters();
+let allowSharedSyncFromProps = false;
+
+const normalizeDateValue = (value?: string | null) => value ?? '';
 
 const submitFilters = () => {
+    setSharedDateFilters(normalizeDateValue(filterState.start_date), normalizeDateValue(filterState.end_date));
+
     router.get(dashboard().url, filterState, {
         preserveScroll: true,
         preserveState: true,
@@ -152,8 +159,31 @@ watch(
     (current) => {
         filterState.start_date = current?.start_date ?? '';
         filterState.end_date = current?.end_date ?? '';
+
+        if (allowSharedSyncFromProps) {
+            setSharedDateFilters(normalizeDateValue(current?.start_date), normalizeDateValue(current?.end_date));
+        }
     }
 );
+
+onMounted(() => {
+    const sharedFilters = getSharedDateFilters();
+    const sharedStart = normalizeDateValue(sharedFilters.start);
+    const sharedEnd = normalizeDateValue(sharedFilters.end);
+    const hasSharedFilters = Boolean(sharedStart || sharedEnd);
+    const startDiffers = sharedStart !== normalizeDateValue(filterState.start_date);
+    const endDiffers = sharedEnd !== normalizeDateValue(filterState.end_date);
+
+    if (hasSharedFilters && (startDiffers || endDiffers)) {
+        filterState.start_date = sharedStart;
+        filterState.end_date = sharedEnd;
+        submitFilters();
+    } else if (!hasSharedFilters) {
+        setSharedDateFilters(normalizeDateValue(filterState.start_date), normalizeDateValue(filterState.end_date));
+    }
+
+    allowSharedSyncFromProps = true;
+});
 </script>
 
 <template>
@@ -172,13 +202,13 @@ watch(
                             <label class="text-xs font-semibold uppercase tracking-wide text-muted-foreground" for="dashboard-start-date">
                                 Data inicial
                             </label>
-                            <Input id="dashboard-start-date" v-model="filterState.start_date" type="date" />
+                            <DatePicker id="dashboard-start-date" v-model="filterState.start_date" placeholder="Selecione a data inicial" />
                         </div>
                         <div class="space-y-2">
                             <label class="text-xs font-semibold uppercase tracking-wide text-muted-foreground" for="dashboard-end-date">
                                 Data final
                             </label>
-                            <Input id="dashboard-end-date" v-model="filterState.end_date" type="date" />
+                            <DatePicker id="dashboard-end-date" v-model="filterState.end_date" placeholder="Selecione a data final" />
                         </div>
                         <div class="flex items-end gap-2">
                             <Button type="submit" class="flex-1" :disabled="isFiltering">

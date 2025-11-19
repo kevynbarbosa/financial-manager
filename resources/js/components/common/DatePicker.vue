@@ -11,6 +11,7 @@ import { CalendarIcon } from 'lucide-vue-next';
 
 const props = withDefaults(
     defineProps<{
+        id?: string;
         modelValue?: string | null;
         placeholder?: string;
         disabled?: boolean;
@@ -65,6 +66,7 @@ const handleSelect = (value?: DateValue) => {
     <Popover v-slot="{ close }">
         <PopoverTrigger as-child>
             <Button
+                :id="id"
                 variant="outline"
                 :disabled="disabled"
                 :class="cn('w-full justify-start text-left font-normal', !selectedDate && 'text-muted-foreground')"
