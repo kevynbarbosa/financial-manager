@@ -5,11 +5,15 @@ namespace App\Services\Ofx;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
 use App\Models\User;
+use App\Services\Transactions\TransactionCategorizer;
 use Illuminate\Http\UploadedFile;
 
 class OfxImportService
 {
-    public function __construct(private readonly OfxParser $parser) {}
+    public function __construct(
+        private readonly OfxParser $parser,
+        private readonly TransactionCategorizer $categorizer,
+    ) {}
 
     public function import(User $user, UploadedFile $file): array
     {
@@ -50,12 +54,16 @@ class OfxImportService
                 continue;
             }
 
+            $suggestedCategory = $this->categorizer->suggestCategory($user, $transaction['description']);
+
             $account->transactions()->create([
                 'description' => $transaction['description'] ?: 'Transação OFX',
                 'amount' => $transaction['amount'],
                 'type' => $transaction['type'],
                 'occurred_at' => $transaction['occurred_at'],
                 'external_id' => $transaction['external_id'],
+                'transaction_category_id' => $suggestedCategory['id'] ?? null,
+                'category' => $suggestedCategory['name'] ?? null,
                 'metadata' => [
                     'ofx' => [
                         'raw_type' => $transaction['raw_type'],

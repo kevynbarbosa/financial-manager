@@ -2,6 +2,7 @@
 
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
+use App\Models\TransactionCategory;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 
@@ -60,6 +61,60 @@ it('does not duplicate transactions with the same FITID', function () {
         'bank_account_id' => $account->id,
         'external_id' => 'DEF456',
         'description' => 'Pagamento cartão',
+    ]);
+});
+
+it('auto-assigns category by matching description for the user', function () {
+    $user = User::factory()->create();
+    $category = TransactionCategory::factory()->for($user)->create();
+    $trainingAccount = BankAccount::factory()->for($user)->create([
+        'account_number' => 'TRAIN-001',
+    ]);
+
+    BankTransaction::factory()->for($trainingAccount)->create([
+        'description' => 'Pagamento cartão',
+        'transaction_category_id' => $category->id,
+        'category' => $category->name,
+        'occurred_at' => now()->subDay(),
+    ]);
+
+    actingAs($user);
+
+    $file = UploadedFile::fake()->createWithContent('extrato.ofx', sampleOfxContent());
+
+    $this->post(route('accounts.import-ofx'), [
+        'ofx_file' => $file,
+    ])->assertRedirect(route('accounts.index'));
+
+    $account = BankAccount::where('user_id', $user->id)->where('account_number', '000111')->first();
+
+    $this->assertDatabaseHas('bank_transactions', [
+        'bank_account_id' => $account?->id,
+        'external_id' => 'DEF456',
+        'transaction_category_id' => $category->id,
+        'category' => $category->name,
+    ]);
+});
+
+it('auto-assigns ifood category when description starts with IFD*', function () {
+    $user = User::factory()->create();
+    $category = TransactionCategory::factory()->for($user)->state(['name' => 'Ifood'])->create();
+
+    actingAs($user);
+
+    $file = UploadedFile::fake()->createWithContent('ifood.ofx', sampleOfxIfoodContent());
+
+    $this->post(route('accounts.import-ofx'), [
+        'ofx_file' => $file,
+    ])->assertRedirect(route('accounts.index'));
+
+    $account = BankAccount::where('user_id', $user->id)->where('account_number', 'IFDACC')->first();
+
+    $this->assertDatabaseHas('bank_transactions', [
+        'bank_account_id' => $account?->id,
+        'external_id' => 'IF001',
+        'transaction_category_id' => $category->id,
+        'category' => $category->name,
     ]);
 });
 
@@ -200,6 +255,53 @@ NEWFILEUID:NONE
 </CCSTMTRS>
 </CCSTMTTRNRS>
 </CREDITCARDMSGSRSV1>
+</OFX>
+OFX;
+}
+
+function sampleOfxIfoodContent(): string
+{
+    return <<<OFX
+OFXHEADER:100
+DATA:OFXSGML
+VERSION:102
+SECURITY:NONE
+ENCODING:USASCII
+CHARSET:1252
+COMPRESSION:NONE
+OLDFILEUID:NONE
+NEWFILEUID:NONE
+
+<OFX>
+  <SIGNONMSGSRSV1>
+    <SONRS>
+      <FI>
+        <ORG>Banco Codex</ORG>
+        <FID>987</FID>
+      </FI>
+    </SONRS>
+  </SIGNONMSGSRSV1>
+  <BANKMSGSRSV1>
+    <STMTTRNRS>
+      <STMTRS>
+        <CURDEF>BRL</CURDEF>
+        <BANKACCTFROM>
+          <BANKID>987</BANKID>
+          <ACCTID>IFDACC</ACCTID>
+          <ACCTTYPE>CHECKING</ACCTTYPE>
+        </BANKACCTFROM>
+        <BANKTRANLIST>
+          <STMTTRN>
+            <TRNTYPE>DEBIT</TRNTYPE>
+            <DTPOSTED>20250111120000</DTPOSTED>
+            <TRNAMT>-79.90</TRNAMT>
+            <FITID>IF001</FITID>
+            <MEMO>IFD*IFOOD PEDIDO</MEMO>
+          </STMTTRN>
+        </BANKTRANLIST>
+      </STMTRS>
+    </STMTTRNRS>
+  </BANKMSGSRSV1>
 </OFX>
 OFX;
 }
