@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ImportOfxRequest;
 use App\Http\Requests\UpdateBankAccountRequest;
+use App\Enums\AccountType;
 use App\Models\BankAccount;
 use App\Models\BankTransaction;
 use App\Models\TransactionCategory;
@@ -21,9 +22,6 @@ use function InertiaUI\Modal\back_from_modal;
 
 class BankAccountController extends Controller
 {
-    /**
-     * Display a listing of the user's bank accounts with monthly summaries.
-     */
     public function index(Request $request): Response
     {
         $user = $request->user();
@@ -52,7 +50,7 @@ class BankAccountController extends Controller
             ->where('user_id', $user->id)
             ->orderBy('name')
             ->get(['id', 'name', 'icon', 'color'])
-            ->map(fn (TransactionCategory $category) => [
+            ->map(fn(TransactionCategory $category) => [
                 'id' => $category->id,
                 'name' => $category->name,
                 'icon' => $category->icon,
@@ -167,8 +165,8 @@ class BankAccountController extends Controller
 
         $summary = [
             'totalBalance' => $accountsResource->sum('balance'),
-            'totalIncome' => $accountsResource->sum(fn ($account) => $account['monthlyMovements']['income']),
-            'totalExpense' => $accountsResource->sum(fn ($account) => $account['monthlyMovements']['expense']),
+            'totalIncome' => $accountsResource->sum(fn($account) => $account['monthlyMovements']['income']),
+            'totalExpense' => $accountsResource->sum(fn($account) => $account['monthlyMovements']['expense']),
             'period' => [
                 'start' => $startOfMonth->toDateString(),
                 'end' => $endOfMonth->toDateString(),
@@ -210,8 +208,6 @@ class BankAccountController extends Controller
 
     public function edit(Request $request, BankAccount $account): ModalResponse
     {
-        $this->ensureOwnsAccount($request->user(), $account);
-
         return Inertia::modal('accounts/modals/EditBankAccount', [
             'account' => [
                 'id' => $account->id,
@@ -221,33 +217,14 @@ class BankAccountController extends Controller
                 'account_number' => $account->account_number,
                 'currency' => $account->currency,
             ],
-            'accountTypes' => $this->accountTypeOptions(),
+            'accountTypes' => AccountType::options(),
         ])->baseRoute('accounts.index');
     }
 
     public function update(UpdateBankAccountRequest $request, BankAccount $account): RedirectResponse
     {
-        $this->ensureOwnsAccount($request->user(), $account);
-
         $account->update($request->validated());
 
         return back_from_modal()->with('success', 'Conta atualizada com sucesso.');
-    }
-
-    protected function ensureOwnsAccount(?User $user, BankAccount $account): void
-    {
-        abort_if(! $user, 403);
-        abort_if($account->user_id !== $user->id, 403);
-    }
-
-    protected function accountTypeOptions(): array
-    {
-        return [
-            ['value' => 'checking', 'label' => 'Conta corrente'],
-            ['value' => 'savings', 'label' => 'Conta poupança'],
-            ['value' => 'credit', 'label' => 'Cartão de crédito'],
-            ['value' => 'investment', 'label' => 'Investimentos'],
-            ['value' => 'business', 'label' => 'Conta empresarial'],
-        ];
     }
 }
