@@ -67,3 +67,91 @@ it('updates transaction category via quick action endpoint', function () {
     $transaction->refresh();
     expect($transaction->transaction_category_id)->toBe($category->id);
 });
+
+it('assigns category in bulk using contains without overwriting existing ones', function () {
+    $user = User::factory()->create();
+    $account = BankAccount::factory()->for($user)->create();
+    $targetCategory = TransactionCategory::factory()->for($user)->create(['name' => 'Mercado']);
+    $otherCategory = TransactionCategory::factory()->for($user)->create(['name' => 'Transporte']);
+
+    $withoutCategory = BankTransaction::factory()->for($account)->create([
+        'description' => 'Pagamento mercado bom',
+        'transaction_category_id' => null,
+        'category' => null,
+    ]);
+
+    $withCategory = BankTransaction::factory()->for($account)->create([
+        'description' => 'Mercado central',
+        'transaction_category_id' => $otherCategory->id,
+        'category' => $otherCategory->name,
+    ]);
+
+    $nonMatching = BankTransaction::factory()->for($account)->create([
+        'description' => 'Academia mensal',
+        'transaction_category_id' => null,
+        'category' => null,
+    ]);
+
+    actingAs($user);
+
+    $this
+        ->from(route('accounts.index'))
+        ->post(route('transactions.category.bulk'), [
+            'category_id' => $targetCategory->id,
+            'match_type' => 'contains',
+            'term' => 'mercado',
+            'overwrite_existing' => false,
+        ])
+        ->assertRedirect(route('accounts.index'));
+
+    $withoutCategory->refresh();
+    $withCategory->refresh();
+    $nonMatching->refresh();
+
+    expect($withoutCategory->transaction_category_id)->toBe($targetCategory->id);
+    expect($withoutCategory->category)->toBe($targetCategory->name);
+    expect($withCategory->transaction_category_id)->toBe($otherCategory->id);
+    expect($withCategory->category)->toBe($otherCategory->name);
+    expect($nonMatching->transaction_category_id)->toBeNull();
+});
+
+it('overwrites categories when requested using exact match and keeps other users intact', function () {
+    $user = User::factory()->create();
+    $otherUser = User::factory()->create();
+    $account = BankAccount::factory()->for($user)->create();
+    $otherAccount = BankAccount::factory()->for($otherUser)->create();
+
+    $newCategory = TransactionCategory::factory()->for($user)->create(['name' => 'Streaming']);
+    $previousCategory = TransactionCategory::factory()->for($user)->create(['name' => 'Antigo']);
+
+    $matching = BankTransaction::factory()->for($account)->create([
+        'description' => 'Netflix mensal',
+        'transaction_category_id' => $previousCategory->id,
+        'category' => $previousCategory->name,
+    ]);
+
+    $otherUserTransaction = BankTransaction::factory()->for($otherAccount)->create([
+        'description' => 'Netflix mensal',
+        'transaction_category_id' => null,
+        'category' => null,
+    ]);
+
+    actingAs($user);
+
+    $this
+        ->from(route('accounts.index'))
+        ->post(route('transactions.category.bulk'), [
+            'category_id' => $newCategory->id,
+            'match_type' => 'exact',
+            'term' => 'Netflix mensal',
+            'overwrite_existing' => true,
+        ])
+        ->assertRedirect(route('accounts.index'));
+
+    $matching->refresh();
+    $otherUserTransaction->refresh();
+
+    expect($matching->transaction_category_id)->toBe($newCategory->id);
+    expect($matching->category)->toBe($newCategory->name);
+    expect($otherUserTransaction->transaction_category_id)->toBeNull();
+});

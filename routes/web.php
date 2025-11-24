@@ -32,6 +32,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('transactions/{transaction}/edit', [BankTransactionController::class, 'edit'])->name('transactions.edit');
     Route::put('transactions/{transaction}', [BankTransactionController::class, 'update'])->name('transactions.update');
     Route::put('transactions/{transaction}/category', [BankTransactionController::class, 'updateCategory'])->name('transactions.category.update');
+    Route::get('transactions/category/bulk', [BankTransactionController::class, 'bulkCategoryModal'])->name('transactions.category.bulk.modal');
+    Route::post('transactions/category/bulk', [BankTransactionController::class, 'bulkAssignCategory'])->name('transactions.category.bulk');
 
     Route::get('categories/create', [CategoryController::class, 'create'])->name('categories.create');
     Route::get('categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');

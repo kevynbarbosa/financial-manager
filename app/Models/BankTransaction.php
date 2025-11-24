@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class BankTransaction extends Model
 {
@@ -38,5 +39,23 @@ class BankTransaction extends Model
     public function categoryRelation(): BelongsTo
     {
         return $this->belongsTo(TransactionCategory::class, 'transaction_category_id');
+    }
+
+    protected function description(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => $this->normalizeDescription($value)
+        );
+    }
+
+    private function normalizeDescription(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = preg_replace('/\s+/', ' ', trim($value));
+
+        return $normalized ?? '';
     }
 }

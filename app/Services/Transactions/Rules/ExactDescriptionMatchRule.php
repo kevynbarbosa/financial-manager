@@ -4,12 +4,13 @@ namespace App\Services\Transactions\Rules;
 
 use App\Models\BankTransaction;
 use App\Models\User;
+use App\Services\Transactions\DescriptionNormalizer;
 
 class ExactDescriptionMatchRule implements TransactionCategoryRuleInterface
 {
     public function suggest(User $user, string $description): ?array
     {
-        $normalized = $this->normalizeDescription($description);
+        $normalized = DescriptionNormalizer::normalize($description);
 
         $match = BankTransaction::query()
             ->select('transaction_categories.id as id', 'transaction_categories.name as name')
@@ -29,12 +30,5 @@ class ExactDescriptionMatchRule implements TransactionCategoryRuleInterface
             'id' => (int) $match->id,
             'name' => $match->name,
         ];
-    }
-
-    private function normalizeDescription(string $description): string
-    {
-        $normalized = preg_replace('/\s+/', ' ', strtolower(trim($description)));
-
-        return $normalized ?? '';
     }
 }

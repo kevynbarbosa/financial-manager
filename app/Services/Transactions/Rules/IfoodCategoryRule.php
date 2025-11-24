@@ -4,12 +4,13 @@ namespace App\Services\Transactions\Rules;
 
 use App\Models\TransactionCategory;
 use App\Models\User;
+use App\Services\Transactions\DescriptionNormalizer;
 
 class IfoodCategoryRule implements TransactionCategoryRuleInterface
 {
     public function suggest(User $user, string $description): ?array
     {
-        $normalized = $this->normalizeDescription($description);
+        $normalized = DescriptionNormalizer::normalize($description);
 
         if (! str_starts_with($normalized, 'ifd*')) {
             return null;
@@ -28,12 +29,5 @@ class IfoodCategoryRule implements TransactionCategoryRuleInterface
             'id' => (int) $category->id,
             'name' => $category->name,
         ];
-    }
-
-    private function normalizeDescription(string $description): string
-    {
-        $normalized = preg_replace('/\s+/', ' ', strtolower(trim($description)));
-
-        return $normalized ?? '';
     }
 }
