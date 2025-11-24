@@ -24,8 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { formatCurrency } from '@/pages/accounts/utils';
 import { importOfx as importOfxRoute } from '@/routes/accounts';
 import type { BankAccount, BankTransaction, PaginatedResource, TransactionCategoryOption, TransactionFilters } from '@/types/accounts';
-import type { PageProps as InertiaPageProps } from '@inertiajs/vue3';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 import { ArrowDownRight, ArrowUpRight, FileUp } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
@@ -84,14 +83,6 @@ const props = withDefaults(
     },
 );
 
-type PageProps = InertiaPageProps<{
-    flash?: {
-        success?: string;
-        error?: string;
-    };
-}>;
-
-const page = usePage<PageProps>();
 const ofxInputRef = ref<HTMLInputElement | null>(null);
 const importFeedback = ref('');
 const ofxForm = useForm<{ ofx_file: File | null }>({
@@ -135,7 +126,7 @@ const handleOfxSelected = (event: Event) => {
             importFeedback.value = '';
         },
         onError: () => {
-            importFeedback.value = 'Não foi possível importar o arquivo. Revise o formato e tente novamente.';
+            importFeedback.value = '';
         },
         onFinish: () => {
             ofxForm.reset('ofx_file');
@@ -145,24 +136,6 @@ const handleOfxSelected = (event: Event) => {
         },
     });
 };
-
-const flashState = computed(() => ({
-    success: page.props.flash?.success ?? '',
-    error: page.props.flash?.error ?? '',
-}));
-const flashVariant = computed<'success' | 'error' | null>(() => {
-    if (flashState.value.error) {
-        return 'error';
-    }
-
-    if (flashState.value.success) {
-        return 'success';
-    }
-
-    return null;
-});
-const flashMessage = computed(() => flashState.value.error || flashState.value.success);
-const importStatusMessage = computed(() => flashMessage.value || importFeedback.value);
 </script>
 
 <template>
@@ -184,19 +157,7 @@ const importStatusMessage = computed(() => flashMessage.value || importFeedback.
                         <span v-else>Importar arquivo OFX</span>
                     </Button>
                     <input ref="ofxInputRef" class="sr-only" type="file" accept=".ofx" @change="handleOfxSelected" />
-                    <p
-                        v-if="importStatusMessage"
-                        class="text-xs"
-                        :class="
-                            flashVariant === 'error'
-                                ? 'text-rose-500'
-                                : flashVariant === 'success'
-                                    ? 'text-emerald-500'
-                                    : 'text-muted-foreground'
-                        "
-                    >
-                        {{ importStatusMessage }}
-                    </p>
+                    <p v-if="importFeedback" class="text-xs text-muted-foreground">{{ importFeedback }}</p>
                     <p v-if="ofxForm.errors.ofx_file" class="text-xs text-rose-500">{{ ofxForm.errors.ofx_file }}</p>
                 </div>
             </CardContent>
