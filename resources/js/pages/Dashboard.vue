@@ -24,19 +24,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useSharedDateFilters } from '@/composables/useSharedDateFilters';
 import { formatCurrency } from '@/pages/accounts/utils';
 import { Head, router } from '@inertiajs/vue3';
-import {
-    Car,
-    Coffee,
-    CreditCard,
-    Dumbbell,
-    Gift,
-    Home,
-    PiggyBank,
-    ShoppingBag,
-    Store,
-    Wallet,
-} from 'lucide-vue-next';
-import { computed, onMounted, reactive, ref, type Component, watch } from 'vue';
+import { Car, Coffee, CreditCard, Dumbbell, Gift, Home, PiggyBank, ShoppingBag, Store, Wallet } from 'lucide-vue-next';
+import { computed, onMounted, reactive, ref, watch, type Component } from 'vue';
 
 type CategorySpendingItem = {
     id: number | null;
@@ -163,7 +152,7 @@ watch(
         if (allowSharedSyncFromProps) {
             setSharedDateFilters(normalizeDateValue(current?.start_date), normalizeDateValue(current?.end_date));
         }
-    }
+    },
 );
 
 onMounted(() => {
@@ -199,13 +188,13 @@ onMounted(() => {
                 <CardContent>
                     <form class="grid gap-4 md:grid-cols-[repeat(3,minmax(0,1fr))]" @submit.prevent="submitFilters">
                         <div class="space-y-2">
-                            <label class="text-xs font-semibold uppercase tracking-wide text-muted-foreground" for="dashboard-start-date">
+                            <label class="text-xs font-semibold tracking-wide text-muted-foreground uppercase" for="dashboard-start-date">
                                 Data inicial
                             </label>
                             <DatePicker id="dashboard-start-date" v-model="filterState.start_date" placeholder="Selecione a data inicial" />
                         </div>
                         <div class="space-y-2">
-                            <label class="text-xs font-semibold uppercase tracking-wide text-muted-foreground" for="dashboard-end-date">
+                            <label class="text-xs font-semibold tracking-wide text-muted-foreground uppercase" for="dashboard-end-date">
                                 Data final
                             </label>
                             <DatePicker id="dashboard-end-date" v-model="filterState.end_date" placeholder="Selecione a data final" />
@@ -214,9 +203,7 @@ onMounted(() => {
                             <Button type="submit" class="flex-1" :disabled="isFiltering">
                                 {{ isFiltering ? 'Atualizando...' : 'Aplicar filtros' }}
                             </Button>
-                            <Button type="button" variant="outline" :disabled="!filtersApplied || isFiltering" @click="resetFilters">
-                                Limpar
-                            </Button>
+                            <Button type="button" variant="outline" :disabled="!filtersApplied || isFiltering" @click="resetFilters"> Limpar </Button>
                         </div>
                     </form>
                 </CardContent>
@@ -224,11 +211,9 @@ onMounted(() => {
 
             <Card class="border border-border/70 bg-gradient-to-br from-background to-muted/60">
                 <CardHeader class="space-y-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Resumo</p>
+                    <p class="text-xs font-semibold tracking-[0.3em] text-muted-foreground uppercase">Resumo</p>
                     <CardTitle class="text-3xl">Relatório de gastos por categoria</CardTitle>
-                    <CardDescription>
-                        Analise quais categorias concentram as maiores saídas para tomar decisões mais rápidas.
-                    </CardDescription>
+                    <CardDescription> Analise quais categorias concentram as maiores saídas para tomar decisões mais rápidas. </CardDescription>
                 </CardHeader>
                 <CardContent class="grid gap-4 md:grid-cols-2">
                     <div class="rounded-xl border border-border/70 p-4">
@@ -273,10 +258,7 @@ onMounted(() => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            <TableRow
-                                v-for="category in categoriesWithShare"
-                                :key="category.id ?? `uncategorized-${category.name}`"
-                            >
+                            <TableRow v-for="category in categoriesWithShare" :key="category.id ?? `uncategorized-${category.name}`">
                                 <TableCell>
                                     <div class="flex items-center gap-3">
                                         <span
