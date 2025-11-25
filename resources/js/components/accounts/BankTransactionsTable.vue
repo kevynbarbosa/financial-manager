@@ -1,31 +1,23 @@
 <script setup lang="ts">
-import DatePicker from '@/components/common/DatePicker.vue';
+import TransactionCategoryDropdown from '@/components/accounts/TransactionCategoryDropdown.vue';
 import DataTablePagination from '@/components/common/DataTablePagination.vue';
+import DatePicker from '@/components/common/DatePicker.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useSharedDateFilters } from '@/composables/useSharedDateFilters';
+import { useTransactionFilters, type SortColumn, type SortDirection } from '@/composables/useTransactionFilters';
 import { formatDateTime } from '@/lib/date-utils';
 import { formatCurrency } from '@/pages/accounts/utils';
 import { index as accountsIndex } from '@/routes/accounts';
-import { bulkModal as bulkCategoryModalRoute, update as updateTransactionCategoryRoute } from '@/routes/transactions/category';
 import { edit as editTransaction } from '@/routes/transactions';
-import TransactionCategoryDropdown from '@/components/accounts/TransactionCategoryDropdown.vue';
-import { useSharedDateFilters } from '@/composables/useSharedDateFilters';
-import { useTransactionFilters, type SortColumn, type SortDirection } from '@/composables/useTransactionFilters';
+import { update as updateTransactionCategoryRoute } from '@/routes/transactions/category';
+import { modal as bulkCategoryModalRoute } from '@/routes/transactions/category/bulk';
 import type { BankTransaction, PaginatedResource, TransactionCategoryOption, TransactionFilters } from '@/types/accounts';
 import { router } from '@inertiajs/vue3';
-import {
-    ArrowDown,
-    ArrowDownRight,
-    ArrowUp,
-    ArrowUpDown,
-    ArrowUpRight,
-    Filter,
-    Pencil,
-    Sparkles,
-} from 'lucide-vue-next';
+import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpDown, ArrowUpRight, Filter, Pencil, Sparkles } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 
 type AccountOption = {
@@ -91,14 +83,11 @@ const {
     ariaSortFor,
     sortButtonLabel,
     getSortDirection,
-} = useTransactionFilters(
-    () => filtersSource.value,
-    {
-        defaultSort: defaultSortColumn,
-        defaultDirection: defaultSortDirection,
-        initialSortDirectionByColumn,
-    },
-);
+} = useTransactionFilters(() => filtersSource.value, {
+    defaultSort: defaultSortColumn,
+    defaultDirection: defaultSortDirection,
+    initialSortDirectionByColumn,
+});
 
 const { getSharedDateFilters, setSharedDateFilters } = useSharedDateFilters();
 let allowSharedSyncFromProps = false;
@@ -214,7 +203,7 @@ watch(
 
         setSharedDateFilters(normalizeDateValue(current?.start_date), normalizeDateValue(current?.end_date));
     },
-    { deep: true }
+    { deep: true },
 );
 </script>
 
@@ -241,7 +230,7 @@ watch(
                         :href="bulkCategoryModalUrl"
                         as="button"
                         type="button"
-                        class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                     >
                         <Sparkles class="h-3.5 w-3.5" />
                         <span>Atribuir categoria em massa</span>
