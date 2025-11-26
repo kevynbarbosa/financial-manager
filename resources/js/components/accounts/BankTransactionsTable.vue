@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useSharedDateFilters } from '@/composables/useSharedDateFilters';
 import { useTransactionFilters, type SortColumn, type SortDirection } from '@/composables/useTransactionFilters';
 import { formatDateTime } from '@/lib/date-utils';
 import { formatCurrency } from '@/pages/accounts/utils';
@@ -18,7 +17,7 @@ import { modal as bulkCategoryModalRoute } from '@/routes/transactions/category/
 import type { BankTransaction, PaginatedResource, TransactionCategoryOption, TransactionFilters } from '@/types/accounts';
 import { router } from '@inertiajs/vue3';
 import { ArrowDown, ArrowDownRight, ArrowUp, ArrowUpDown, ArrowUpRight, Filter, Pencil, Sparkles } from 'lucide-vue-next';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 
 type AccountOption = {
     id: number;
@@ -89,19 +88,15 @@ const {
     initialSortDirectionByColumn,
 });
 
-const { getSharedDateFilters, setSharedDateFilters } = useSharedDateFilters();
-let allowSharedSyncFromProps = false;
 const normalizeDateValue = (value?: string | null) => value ?? '';
 const isLoading = ref(false);
 
 const submitFilters = () => {
-    setSharedDateFilters(normalizeDateValue(filterState.start_date), normalizeDateValue(filterState.end_date));
-
     router.get(accountsIndex().url, filtersPayload.value, {
         preserveState: true,
         preserveScroll: true,
         replace: true,
-        only: ['transactions', 'transactionFilters'],
+        only: ['accounts', 'summary', 'transactions', 'transactionFilters', 'transactionCategoryOptions'],
         onStart: () => {
             isLoading.value = true;
         },
@@ -174,37 +169,6 @@ const categoryFilterOptions = computed(() => {
 });
 
 const bulkCategoryModalUrl = computed(() => bulkCategoryModalRoute().url);
-
-onMounted(() => {
-    const sharedFilters = getSharedDateFilters();
-    const sharedStart = normalizeDateValue(sharedFilters.start);
-    const sharedEnd = normalizeDateValue(sharedFilters.end);
-    const hasSharedFilters = Boolean(sharedStart || sharedEnd);
-    const startDiffers = sharedStart !== normalizeDateValue(filterState.start_date);
-    const endDiffers = sharedEnd !== normalizeDateValue(filterState.end_date);
-
-    if (hasSharedFilters && (startDiffers || endDiffers)) {
-        filterState.start_date = sharedStart;
-        filterState.end_date = sharedEnd;
-        submitFilters();
-    } else if (!hasSharedFilters) {
-        setSharedDateFilters(normalizeDateValue(filterState.start_date), normalizeDateValue(filterState.end_date));
-    }
-
-    allowSharedSyncFromProps = true;
-});
-
-watch(
-    filtersSource,
-    (current) => {
-        if (!allowSharedSyncFromProps) {
-            return;
-        }
-
-        setSharedDateFilters(normalizeDateValue(current?.start_date), normalizeDateValue(current?.end_date));
-    },
-    { deep: true },
-);
 </script>
 
 <template>
@@ -239,7 +203,15 @@ watch(
             </div>
         </CardHeader>
         <CardContent class="space-y-4">
-            <form class="space-y-3" @submit.prevent="submitFilters">
+            <form class="space-y-4" @submit.prevent="submitFilters">
+                <div class="space-y-1">
+                    <label class="text-xs font-medium text-muted-foreground">Período das transações</label>
+                    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        <DatePicker v-model="filterState.start_date" placeholder="Data inicial" />
+                        <DatePicker v-model="filterState.end_date" placeholder="Data final" />
+                    </div>
+                </div>
+
                 <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     <div class="space-y-1">
                         <label class="text-xs font-medium text-muted-foreground" for="transaction-search">Buscar</label>
@@ -281,13 +253,6 @@ watch(
                                 {{ option.label }}
                             </option>
                         </select>
-                    </div>
-                    <div class="space-y-1 lg:col-span-3 xl:col-span-2">
-                        <label class="text-xs font-medium text-muted-foreground">Período</label>
-                        <div class="grid gap-2 sm:grid-cols-2">
-                            <DatePicker v-model="filterState.start_date" placeholder="Data inicial" />
-                            <DatePicker v-model="filterState.end_date" placeholder="Data final" />
-                        </div>
                     </div>
                 </div>
                 <div class="flex flex-wrap items-center justify-between gap-2">

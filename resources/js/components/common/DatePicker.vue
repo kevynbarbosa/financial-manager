@@ -32,6 +32,7 @@ const emit = defineEmits<{
 const timeZone = getLocalTimeZone();
 const fallbackPlaceholder = today(timeZone);
 const selectedDate = ref<DateValue | null>(null);
+const isOpen = ref(false);
 
 const dateFormatter = computed(
     () =>
@@ -59,11 +60,12 @@ const buttonLabel = computed(() => {
 const handleSelect = (value?: DateValue) => {
     selectedDate.value = value ?? null;
     emit('update:modelValue', value ? value.toString() : null);
+    isOpen.value = false;
 };
 </script>
 
 <template>
-    <Popover v-slot="{ close }">
+    <Popover v-model:open="isOpen">
         <PopoverTrigger as-child>
             <Button
                 :id="id"
@@ -83,7 +85,6 @@ const handleSelect = (value?: DateValue) => {
                 initial-focus
                 @update:model-value="(value) => {
                     handleSelect(value);
-                    close();
                 }"
             />
         </PopoverContent>

@@ -88,6 +88,16 @@ const importFeedback = ref('');
 const ofxForm = useForm<{ ofx_file: File | null }>({
     ofx_file: null,
 });
+const periodRangeLabel = computed(() => {
+    const start = props.summary.period.start;
+    const end = props.summary.period.end;
+
+    if (!start || !end) {
+        return 'Período selecionado';
+    }
+
+    return `Período selecionado: ${start} a ${end}`;
+});
 const accountFilterOptions = computed(() =>
     props.accounts.map((account) => ({
         id: account.id,
@@ -163,6 +173,10 @@ const handleOfxSelected = (event: Event) => {
             </CardContent>
         </Card>
 
+        <div class="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{{ periodRangeLabel }}</span>
+        </div>
+
         <div class="grid gap-4 md:grid-cols-3">
             <Card class="border border-border/60">
                 <CardHeader class="space-y-1 pb-2">
@@ -170,12 +184,12 @@ const handleOfxSelected = (event: Event) => {
                     <CardTitle class="text-3xl">{{ formatCurrency(summary.totalBalance) }}</CardTitle>
                 </CardHeader>
                 <CardContent class="pt-0">
-                    <p class="text-xs text-muted-foreground">Atualizado em tempo real</p>
+                    <p class="text-xs text-muted-foreground">{{ periodRangeLabel }}</p>
                 </CardContent>
             </Card>
             <Card class="border border-border/60">
                 <CardHeader class="space-y-1 pb-2">
-                    <CardDescription class="text-xs tracking-wide text-muted-foreground uppercase">Entradas do mês</CardDescription>
+                    <CardDescription class="text-xs tracking-wide text-muted-foreground uppercase">Entradas no período</CardDescription>
                     <p class="flex items-center gap-2 text-emerald-500">
                         <ArrowUpRight class="h-4 w-4" />
                         <span class="text-2xl font-semibold">{{ formatCurrency(summary.totalIncome) }}</span>
@@ -187,7 +201,7 @@ const handleOfxSelected = (event: Event) => {
             </Card>
             <Card class="border border-border/60">
                 <CardHeader class="space-y-1 pb-2">
-                    <CardDescription class="text-xs tracking-wide text-muted-foreground uppercase">Saídas do mês</CardDescription>
+                    <CardDescription class="text-xs tracking-wide text-muted-foreground uppercase">Saídas no período</CardDescription>
                     <p class="flex items-center gap-2 text-rose-500">
                         <ArrowDownRight class="h-4 w-4" />
                         <span class="text-2xl font-semibold">{{ formatCurrency(summary.totalExpense) }}</span>

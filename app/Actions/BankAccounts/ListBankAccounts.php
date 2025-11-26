@@ -15,11 +15,13 @@ class ListBankAccounts
     {
         $user = $request->user();
 
-        $dateRange = $this->currentMonthRange();
         $filters = $this->extractTransactionFilters($request);
+        $dateRange = $this->resolveDateRange($filters);
+        $filters['start_date'] = $filters['start_date'] ?: $dateRange['start']->toDateString();
+        $filters['end_date'] = $filters['end_date'] ?: $dateRange['end']->toDateString();
         $categories = $this->getCategoryOptions($user->id);
 
-        $accounts = $this->getAccountsWithMonthlySums($user->id, $dateRange);
+        $accounts = $this->getAccountsWithRangeSums($user->id, $dateRange);
         $accountsResource = $this->transformAccounts($accounts);
 
         $transactions = $this->getTransactions($user->id, $filters);
@@ -31,14 +33,6 @@ class ListBankAccounts
             'transactions' => $transactions,
             'transactionFilters' => $filters,
             'transactionCategoryOptions' => $categories,
-        ];
-    }
-
-    private function currentMonthRange(): array
-    {
-        return [
-            'start' => Carbon::now()->startOfMonth(),
-            'end'   => Carbon::now()->endOfMonth(),
         ];
     }
 
@@ -56,6 +50,21 @@ class ListBankAccounts
             'category'   => $request->string('category')->toString(),
             'sort'       => $this->validateEnum($request->string('sort')->toString(), $allowedSorts, 'occurred_at'),
             'direction'  => $this->validateEnum($request->string('direction')->toString(), $allowedDirections, 'desc'),
+        ];
+    }
+
+    private function resolveDateRange(array $filters): array
+    {
+        $start = $filters['start_date'] ? Carbon::parse($filters['start_date']) : Carbon::now()->startOfMonth();
+        $end = $filters['end_date'] ? Carbon::parse($filters['end_date']) : Carbon::now()->endOfMonth();
+
+        if ($start->greaterThan($end)) {
+            [$start, $end] = [$end->copy()->startOfDay(), $start->copy()->endOfDay()];
+        }
+
+        return [
+            'start' => $start->copy()->startOfDay(),
+            'end' => $end->copy()->endOfDay(),
         ];
     }
 
@@ -80,21 +89,21 @@ class ListBankAccounts
             ]);
     }
 
-    private function getAccountsWithMonthlySums(int $userId, array $dateRange)
+    private function getAccountsWithRangeSums(int $userId, array $dateRange)
     {
         return BankAccount::where('user_id', $userId)
             ->withSum([
                 'transactions as monthly_income' => fn($q) =>
-                $this->monthlyRangeQuery($q, $dateRange, 'credit')
+                $this->rangeQuery($q, $dateRange, 'credit')
             ], 'amount')
             ->withSum([
                 'transactions as monthly_expense' => fn($q) =>
-                $this->monthlyRangeQuery($q, $dateRange, 'debit')
+                $this->rangeQuery($q, $dateRange, 'debit')
             ], 'amount')
             ->get();
     }
 
-    private function monthlyRangeQuery(Builder $q, array $range, string $type): void
+    private function rangeQuery(Builder $q, array $range, string $type): void
     {
         $q->whereBetween('occurred_at', [$range['start'], $range['end']])
             ->where('type', $type)
