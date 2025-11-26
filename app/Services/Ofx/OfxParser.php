@@ -12,9 +12,18 @@ class OfxParser
     public function parse(string $contents): array
     {
         $body = $this->extractXmlBody($contents);
-        $xml = simplexml_load_string($body);
+        $body = $this->escapeInvalidEntities($body);
+        $normalized = $this->normalizeOfx($body);
+
+        $xml = $this->loadXml($normalized) ?? $this->loadXml($body);
 
         if (! $xml instanceof SimpleXMLElement) {
+            $fallback = $this->parseWithRegex($normalized) ?? $this->parseWithRegex($body);
+
+            if ($fallback !== null) {
+                return $fallback;
+            }
+
             throw new RuntimeException('Não foi possível interpretar o arquivo OFX enviado.');
         }
 
@@ -45,9 +54,6 @@ class OfxParser
 
         $body = substr($contents, $start);
 
-        $body = $this->closeUnterminatedTags($body);
-        $body = $this->escapeInvalidEntities($body);
-
         if (! is_string($body)) {
             throw new RuntimeException('Não foi possível normalizar o arquivo OFX.');
         }
@@ -55,31 +61,126 @@ class OfxParser
         return $body;
     }
 
+    protected function normalizeOfx(string $body): string
+    {
+        $bodyWithBreaks = preg_replace('/></', ">\n<", $body);
+
+        return $this->closeUnterminatedTags($bodyWithBreaks);
+    }
+
+    protected function loadXml(string $body): ?SimpleXMLElement
+    {
+        libxml_use_internal_errors(true);
+
+        $flags = LIBXML_NOERROR
+            | LIBXML_NOWARNING
+            | LIBXML_NONET
+            | LIBXML_PARSEHUGE
+            | LIBXML_NOCDATA
+            | LIBXML_RECOVER;
+
+        $xml = simplexml_load_string($body, SimpleXMLElement::class, $flags);
+
+        libxml_clear_errors();
+
+        return $xml ?: null;
+    }
+
     protected function closeUnterminatedTags(string $body): string
     {
         $lines = preg_split('/\r?\n/', $body);
 
-        foreach ($lines as $index => $line) {
-            if (! preg_match('/^<([A-Z0-9_]+)>(.*)$/i', $line, $matches)) {
-                continue;
+        $normalized = array_map(function (string $line) {
+            $trimmed = trim($line);
+
+            if (preg_match('/^<([A-Z0-9_]+)>([^<]+)$/i', $trimmed, $matches)) {
+                [$full, $tag, $value] = $matches;
+
+                return sprintf('<%s>%s</%s>', $tag, trim($value), $tag);
             }
 
-            $tag = $matches[1];
-            $value = $matches[2];
+            return $trimmed;
+        }, $lines);
 
-            if ($value === '' || str_contains($value, '</')) {
-                continue;
-            }
-
-            $lines[$index] = sprintf('<%s>%s</%s>', $tag, $value, $tag);
-        }
-
-        return implode(PHP_EOL, $lines);
+        return implode(PHP_EOL, $normalized);
     }
 
     protected function escapeInvalidEntities(string $body): string
     {
         return preg_replace('/&(?![a-zA-Z]+;)/', '&amp;', $body);
+    }
+
+    protected function parseWithRegex(string $body): ?array
+    {
+        $accountNumber = $this->tagValue($body, 'ACCTID');
+        $accountType = strtolower($this->tagValue($body, 'ACCTTYPE') ?? 'checking');
+        $currency = $this->tagValue($body, 'CURDEF') ?? 'BRL';
+        $bankId = $this->tagValue($body, 'BANKID');
+        $institution = $this->tagValue($body, 'ORG');
+
+        if (! $accountNumber) {
+            return null;
+        }
+
+        preg_match_all('/<STMTTRN>(.*?)<\/STMTTRN>/si', $body, $matches);
+
+        $transactions = [];
+
+        foreach ($matches[1] as $chunk) {
+            $rawType = strtolower($this->tagValue($chunk, 'TRNTYPE') ?? 'debit');
+            $amount = (float) ($this->tagValue($chunk, 'TRNAMT') ?? 0);
+            $memo = $this->tagValue($chunk, 'MEMO') ?? 'Transação OFX';
+            $fitId = $this->tagValue($chunk, 'FITID') ?? '';
+            $dateString = $this->tagValue($chunk, 'DTPOSTED') ?? '';
+
+            $transactions[] = [
+                'raw_type' => $rawType,
+                'type' => $this->mapTransactionType($rawType),
+                'amount' => $amount,
+                'description' => trim($memo),
+                'external_id' => $this->externalIdFromRaw($fitId, $dateString, $amount, $memo),
+                'occurred_at' => $this->parseDate($dateString),
+            ];
+        }
+
+        return [
+            'account' => [
+                'number' => $accountNumber,
+                'type' => $accountType,
+                'bank_id' => $bankId,
+                'institution' => $institution,
+                'currency' => $currency,
+                'name' => 'Conta ' . $accountNumber,
+            ],
+            'transactions' => $transactions,
+        ];
+    }
+
+    protected function tagValue(string $body, string $tag): ?string
+    {
+        if (preg_match('/<' . $tag . '>\s*([^<]+)\s*<\/' . $tag . '>/i', $body, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return null;
+    }
+
+    protected function externalIdFromRaw(string $fitId, string $date, float|string $amount, string $memo): string
+    {
+        $fitId = trim($fitId);
+
+        if ($fitId !== '') {
+            return $fitId;
+        }
+
+        $payload = sprintf(
+            '%s|%s|%s',
+            $date !== '' ? $date : now()->format('YmdHis'),
+            (string) $amount,
+            trim($memo)
+        );
+
+        return Str::uuid() . '-' . md5($payload);
     }
 
     protected function parseAccount(SimpleXMLElement $xml, SimpleXMLElement $statement): array

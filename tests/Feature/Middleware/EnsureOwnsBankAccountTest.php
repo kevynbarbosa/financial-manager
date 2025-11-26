@@ -2,6 +2,7 @@
 
 use App\Models\BankAccount;
 use App\Models\User;
+use function Pest\Laravel\actingAs;
 
 it('allows access when the user owns the account', function () {
     $user = User::factory()->create();

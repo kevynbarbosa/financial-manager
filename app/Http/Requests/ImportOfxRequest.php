@@ -14,7 +14,13 @@ class ImportOfxRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ofx_file' => ['required', 'file', 'mimes:ofx,txt', 'max:4096'],
+            'ofx_file' => [
+                'required',
+                'file',
+                'extensions:ofx,txt',
+                'mimetypes:text/plain,application/xml,text/xml,application/octet-stream,application/ofx,application/x-ofx,text/x-ofx,text/ofx',
+                'max:4096',
+            ],
         ];
     }
 }

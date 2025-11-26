@@ -14,6 +14,8 @@ class UpdateBankAccount
     {
         $account->update($request->validated());
 
-        return back_from_modal()->with('success', 'Conta atualizada com sucesso.');
+        return redirect()
+            ->route('accounts.index')
+            ->with('success', 'Conta atualizada com sucesso.');
     }
 }

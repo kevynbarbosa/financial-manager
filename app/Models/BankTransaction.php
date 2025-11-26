@@ -31,9 +31,14 @@ class BankTransaction extends Model
         'is_transfer' => 'boolean',
     ];
 
-    public function account(): BelongsTo
+    public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(BankAccount::class, 'bank_account_id');
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->bankAccount();
     }
 
     public function categoryRelation(): BelongsTo

@@ -65,10 +65,10 @@ class DashboardController extends Controller
             ->orderByDesc('total_spent')
             ->get();
 
-        $totalSpent = (float) $spending->sum(fn ($row) => abs((float) $row->total_spent));
+        $totalSpent = round($spending->sum(fn ($row) => abs((float) $row->total_spent)), 2);
 
         $categories = $spending->map(function ($row) use ($totalSpent) {
-            $total = abs((float) $row->total_spent);
+            $total = round(abs((float) $row->total_spent), 2);
 
             return [
                 'id' => $row->category_id ? (int) $row->category_id : null,
