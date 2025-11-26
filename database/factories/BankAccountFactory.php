@@ -20,7 +20,7 @@ class BankAccountFactory extends Factory
 
         return [
             'user_id' => User::factory(),
-            'name' => $this->faker->words(2, true) . ' Account',
+            'name' => $this->faker->words(2, true).' Account',
             'institution' => $this->faker->randomElement($institutions),
             'account_type' => $this->faker->randomElement($accountTypes),
             'account_number' => $this->faker->bankAccountNumber(),

@@ -17,14 +17,12 @@ class TransactionCategorizer
     public function __construct()
     {
         $this->rules = [
-            new IfoodCategoryRule(),
-            new ExactDescriptionMatchRule(),
+            new IfoodCategoryRule,
+            new ExactDescriptionMatchRule,
         ];
     }
 
     /**
-     * @param  User  $user
-     * @param  string|null  $description
      * @return array{id: int, name: string}|null
      */
     public function suggestCategory(User $user, ?string $description): ?array

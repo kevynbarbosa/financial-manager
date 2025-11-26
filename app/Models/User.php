@@ -65,7 +65,7 @@ class User extends Authenticatable
             $role = Role::where('display_name', $role)->firstOrFail();
         }
 
-        if (!$this->roles->contains($role)) {
+        if (! $this->roles->contains($role)) {
             $this->roles()->attach($role);
         }
     }

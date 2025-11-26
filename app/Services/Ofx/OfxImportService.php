@@ -20,7 +20,7 @@ class OfxImportService
         $data = $this->parser->parse($file->get());
 
         $accountData = $data['account'];
-        $accountNumber = $accountData['number'] ?: 'ofx-' . md5($file->getClientOriginalName());
+        $accountNumber = $accountData['number'] ?: 'ofx-'.md5($file->getClientOriginalName());
         $account = BankAccount::firstOrCreate(
             [
                 'user_id' => $user->id,
@@ -51,6 +51,7 @@ class OfxImportService
 
             if ($existing) {
                 $skipped++;
+
                 continue;
             }
 

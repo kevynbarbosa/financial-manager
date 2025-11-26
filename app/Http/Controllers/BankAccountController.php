@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AccountType;
 use App\Actions\BankAccounts\ImportBankAccountOfx;
 use App\Actions\BankAccounts\ListBankAccounts;
 use App\Actions\BankAccounts\UpdateBankAccount;
+use App\Enums\AccountType;
 use App\Http\Requests\ImportOfxRequest;
 use App\Http\Requests\UpdateBankAccountRequest;
 use App\Models\BankAccount;

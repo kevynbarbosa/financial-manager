@@ -42,14 +42,14 @@ class ListBankAccounts
         $allowedDirections = ['asc', 'desc'];
 
         return [
-            'search'     => $request->string('search')->toString(),
-            'type'       => $request->string('type')->toString(),
-            'account'    => $request->filled('account') ? (int) $request->input('account') : null,
+            'search' => $request->string('search')->toString(),
+            'type' => $request->string('type')->toString(),
+            'account' => $request->filled('account') ? (int) $request->input('account') : null,
             'start_date' => $request->string('start_date')->toString(),
-            'end_date'   => $request->string('end_date')->toString(),
-            'category'   => $request->string('category')->toString(),
-            'sort'       => $this->validateEnum($request->string('sort')->toString(), $allowedSorts, 'occurred_at'),
-            'direction'  => $this->validateEnum($request->string('direction')->toString(), $allowedDirections, 'desc'),
+            'end_date' => $request->string('end_date')->toString(),
+            'category' => $request->string('category')->toString(),
+            'sort' => $this->validateEnum($request->string('sort')->toString(), $allowedSorts, 'occurred_at'),
+            'direction' => $this->validateEnum($request->string('direction')->toString(), $allowedDirections, 'desc'),
         ];
     }
 
@@ -79,10 +79,10 @@ class ListBankAccounts
             ->where('user_id', $userId)
             ->orderBy('name')
             ->get(['id', 'name', 'icon', 'color'])
-            ->map(fn($c) => [
-                'id'    => $c->id,
-                'name'  => $c->name,
-                'icon'  => $c->icon,
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'icon' => $c->icon,
                 'color' => $c->color,
                 'value' => (string) $c->id,
                 'label' => $c->name,
@@ -93,12 +93,10 @@ class ListBankAccounts
     {
         return BankAccount::where('user_id', $userId)
             ->withSum([
-                'transactions as monthly_income' => fn($q) =>
-                $this->rangeQuery($q, $dateRange, 'credit')
+                'transactions as monthly_income' => fn ($q) => $this->rangeQuery($q, $dateRange, 'credit'),
             ], 'amount')
             ->withSum([
-                'transactions as monthly_expense' => fn($q) =>
-                $this->rangeQuery($q, $dateRange, 'debit')
+                'transactions as monthly_expense' => fn ($q) => $this->rangeQuery($q, $dateRange, 'debit'),
             ], 'amount')
             ->get();
     }
@@ -112,15 +110,15 @@ class ListBankAccounts
 
     private function transformAccounts($accounts)
     {
-        return $accounts->map(fn(BankAccount $a) => [
-            'id'          => $a->id,
-            'name'        => $a->name,
+        return $accounts->map(fn (BankAccount $a) => [
+            'id' => $a->id,
+            'name' => $a->name,
             'institution' => $a->institution,
-            'balance'     => (float) $a->balance,
-            'currency'    => $a->currency,
+            'balance' => (float) $a->balance,
+            'currency' => $a->currency,
             'accountType' => $a->account_type,
             'monthlyMovements' => [
-                'income'  => (float) ($a->monthly_income ?? 0),
+                'income' => (float) ($a->monthly_income ?? 0),
                 'expense' => (float) ($a->monthly_expense ?? 0),
             ],
         ]);
@@ -130,11 +128,11 @@ class ListBankAccounts
     {
         return [
             'totalBalance' => $accounts->sum('balance'),
-            'totalIncome'  => $accounts->sum(fn($a) => $a['monthlyMovements']['income']),
-            'totalExpense' => $accounts->sum(fn($a) => $a['monthlyMovements']['expense']),
+            'totalIncome' => $accounts->sum(fn ($a) => $a['monthlyMovements']['income']),
+            'totalExpense' => $accounts->sum(fn ($a) => $a['monthlyMovements']['expense']),
             'period' => [
                 'start' => $range['start']->toDateString(),
-                'end'   => $range['end']->toDateString(),
+                'end' => $range['end']->toDateString(),
             ],
         ];
     }
@@ -146,30 +144,25 @@ class ListBankAccounts
                 'account:id,name,institution,user_id',
                 'categoryRelation:id,name,icon,color',
             ])
-            ->whereHas('account', fn($q) => $q->where('user_id', $userId))
-            ->tap(fn($q) => $this->applyTransactionFilters($q, $filters))
+            ->whereHas('account', fn ($q) => $q->where('user_id', $userId))
+            ->tap(fn ($q) => $this->applyTransactionFilters($q, $filters))
             ->orderBy($filters['sort'], $filters['direction'])
             ->paginate(10)
             ->withQueryString()
-            ->through(fn(BankTransaction $t) => $this->transformTransaction($t));
+            ->through(fn (BankTransaction $t) => $this->transformTransaction($t));
     }
 
     private function applyTransactionFilters(Builder $q, array $filters): void
     {
-        $q->when($filters['search'], fn($q, $search) =>
-        $q->where('description', 'like', "%$search%"));
+        $q->when($filters['search'], fn ($q, $search) => $q->where('description', 'like', "%$search%"));
 
-        $q->when($filters['type'], fn($q, $type) =>
-        $q->where('type', $type));
+        $q->when($filters['type'], fn ($q, $type) => $q->where('type', $type));
 
-        $q->when($filters['account'], fn($q, $id) =>
-        $q->where('bank_account_id', $id));
+        $q->when($filters['account'], fn ($q, $id) => $q->where('bank_account_id', $id));
 
-        $q->when($filters['start_date'], fn($q, $date) =>
-        $q->whereDate('occurred_at', '>=', Carbon::parse($date)));
+        $q->when($filters['start_date'], fn ($q, $date) => $q->whereDate('occurred_at', '>=', Carbon::parse($date)));
 
-        $q->when($filters['end_date'], fn($q, $date) =>
-        $q->whereDate('occurred_at', '<=', Carbon::parse($date)));
+        $q->when($filters['end_date'], fn ($q, $date) => $q->whereDate('occurred_at', '<=', Carbon::parse($date)));
 
         $q->when($filters['category'], function ($q, $cat) {
             $cat === 'none'
@@ -181,16 +174,16 @@ class ListBankAccounts
     private function transformTransaction(BankTransaction $t): array
     {
         return [
-            'id'          => $t->id,
+            'id' => $t->id,
             'description' => $t->description,
-            'amount'      => (float) $t->amount,
-            'type'        => $t->type,
+            'amount' => (float) $t->amount,
+            'type' => $t->type,
             'is_transfer' => (bool) $t->is_transfer,
-            'category'    => $this->resolveCategory($t),
+            'category' => $this->resolveCategory($t),
             'occurred_at' => optional($t->occurred_at)->toDateTimeString(),
             'account' => [
-                'id'          => $t->account->id,
-                'name'        => $t->account->name,
+                'id' => $t->account->id,
+                'name' => $t->account->name,
                 'institution' => $t->account->institution,
             ],
         ];
@@ -200,18 +193,18 @@ class ListBankAccounts
     {
         if ($t->categoryRelation) {
             return [
-                'id'    => $t->categoryRelation->id,
-                'name'  => $t->categoryRelation->name,
-                'icon'  => $t->categoryRelation->icon,
+                'id' => $t->categoryRelation->id,
+                'name' => $t->categoryRelation->name,
+                'icon' => $t->categoryRelation->icon,
                 'color' => $t->categoryRelation->color,
             ];
         }
 
         if ($t->category) {
             return [
-                'id'    => null,
-                'name'  => $t->category,
-                'icon'  => null,
+                'id' => null,
+                'name' => $t->category,
+                'icon' => null,
                 'color' => null,
             ];
         }

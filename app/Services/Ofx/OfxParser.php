@@ -150,7 +150,7 @@ class OfxParser
                 'bank_id' => $bankId,
                 'institution' => $institution,
                 'currency' => $currency,
-                'name' => 'Conta ' . $accountNumber,
+                'name' => 'Conta '.$accountNumber,
             ],
             'transactions' => $transactions,
         ];
@@ -158,7 +158,7 @@ class OfxParser
 
     protected function tagValue(string $body, string $tag): ?string
     {
-        if (preg_match('/<' . $tag . '>\s*([^<]+)\s*<\/' . $tag . '>/i', $body, $matches)) {
+        if (preg_match('/<'.$tag.'>\s*([^<]+)\s*<\/'.$tag.'>/i', $body, $matches)) {
             return trim($matches[1]);
         }
 
@@ -180,7 +180,7 @@ class OfxParser
             trim($memo)
         );
 
-        return Str::uuid() . '-' . md5($payload);
+        return Str::uuid().'-'.md5($payload);
     }
 
     protected function parseAccount(SimpleXMLElement $xml, SimpleXMLElement $statement): array
@@ -199,7 +199,7 @@ class OfxParser
             'bank_id' => $bankId,
             'institution' => $institution,
             'currency' => $statement->CURDEF ? trim((string) $statement->CURDEF) : 'BRL',
-            'name' => $account?->ACCTID ? 'Conta ' . trim((string) $account->ACCTID) : null,
+            'name' => $account?->ACCTID ? 'Conta '.trim((string) $account->ACCTID) : null,
         ];
     }
 
@@ -264,6 +264,6 @@ class OfxParser
             trim((string) ($node->MEMO ?? ''))
         );
 
-        return Str::uuid() . '-' . md5($payload);
+        return Str::uuid().'-'.md5($payload);
     }
 }

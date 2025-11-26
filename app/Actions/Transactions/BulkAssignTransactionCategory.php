@@ -7,8 +7,8 @@ use App\Models\BankTransaction;
 use App\Models\TransactionCategory;
 use App\Models\User;
 use App\Services\Transactions\DescriptionNormalizer;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 
 class BulkAssignTransactionCategory
 {
@@ -37,7 +37,7 @@ class BulkAssignTransactionCategory
     private function buildTargetTransactions(User $user, array $validated, bool $overwrite): Builder
     {
         $transactions = BankTransaction::query()
-            ->whereHas('account', fn(Builder $query) => $query->where('user_id', $user->id));
+            ->whereHas('account', fn (Builder $query) => $query->where('user_id', $user->id));
 
         if (! $overwrite) {
             $transactions->whereNull('transaction_category_id');
@@ -49,7 +49,7 @@ class BulkAssignTransactionCategory
                 [DescriptionNormalizer::normalize($validated['term'])]
             );
         } else {
-            $likeTerm = '%' . addcslashes(mb_strtolower(trim($validated['term'])), '%_') . '%';
+            $likeTerm = '%'.addcslashes(mb_strtolower(trim($validated['term'])), '%_').'%';
             $transactions->whereRaw('LOWER(description) LIKE ?', [$likeTerm]);
         }
 

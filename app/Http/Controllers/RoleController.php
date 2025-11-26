@@ -55,7 +55,6 @@ class RoleController extends Controller
             ->with('success', 'Perfil criado com sucesso.');
     }
 
-
     public function edit(Role $role): Response
     {
         $role->load('permissions');

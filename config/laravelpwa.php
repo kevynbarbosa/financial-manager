@@ -14,21 +14,21 @@ return [
         'icons' => [
             '64x64' => [
                 'path' => '/pwa/pwa-64x64.png',
-                'purpose' => 'any'
+                'purpose' => 'any',
             ],
             '192x192' => [
                 'path' => '/pwa/pwa-192x192.png',
-                'purpose' => 'any'
+                'purpose' => 'any',
             ],
             '512x512' => [
                 'path' => '/pwa/pwa-512x512.png',
-                'purpose' => 'any'
+                'purpose' => 'any',
             ],
             'maskable-512x512' => [
                 'path' => '/pwa/maskable-icon-512x512.png',
-                'purpose' => 'maskable'
+                'purpose' => 'maskable',
             ],
         ],
-        'custom' => []
-    ]
+        'custom' => [],
+    ],
 ];

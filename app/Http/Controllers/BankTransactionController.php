@@ -19,9 +19,7 @@ use function InertiaUI\Modal\back_from_modal;
 
 class BankTransactionController extends Controller
 {
-    public function __construct(private TransactionAuthorizationService $transactionAuthorization)
-    {
-    }
+    public function __construct(private TransactionAuthorizationService $transactionAuthorization) {}
 
     public function edit(Request $request, BankTransaction $transaction): ModalResponse
     {

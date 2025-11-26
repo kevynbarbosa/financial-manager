@@ -31,7 +31,7 @@ class AuthServiceProvider extends ServiceProvider
     {
         try {
             // Verifica se as tabelas existem antes de tentar registrar os gates
-            if (!app()->environment('testing') && \Schema::hasTable('permissions')) {
+            if (! app()->environment('testing') && \Schema::hasTable('permissions')) {
                 $permissions = Permission::all();
 
                 foreach ($permissions as $permission) {

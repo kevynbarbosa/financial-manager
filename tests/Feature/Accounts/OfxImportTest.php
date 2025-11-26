@@ -143,7 +143,7 @@ it('imports OFX files from Nubank credit card statements', function () {
 
 function sampleOfxContent(): string
 {
-    return <<<OFX
+    return <<<'OFX'
 OFXHEADER:100
 DATA:OFXSGML
 VERSION:102
@@ -197,7 +197,7 @@ OFX;
 
 function sampleNubankOfxContent(): string
 {
-    return <<<OFX
+    return <<<'OFX'
 OFXHEADER:100
 DATA:OFXSGML
 VERSION:102
@@ -261,7 +261,7 @@ OFX;
 
 function sampleOfxIfoodContent(): string
 {
-    return <<<OFX
+    return <<<'OFX'
 OFXHEADER:100
 DATA:OFXSGML
 VERSION:102

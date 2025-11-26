@@ -8,9 +8,7 @@ use Illuminate\Http\RedirectResponse;
 
 class ImportBankAccountOfx
 {
-    public function __construct(private OfxImportService $importService)
-    {
-    }
+    public function __construct(private OfxImportService $importService) {}
 
     public function __invoke(ImportOfxRequest $request): RedirectResponse
     {

@@ -2,12 +2,10 @@
 
 namespace App\Enums\Concerns;
 
-use App\Enums\Contracts\OptionableEnum;
-
 trait HasOptions
 {
     /**
-        * @return array<int, array{value: string, label: string}>
+     * @return array<int, array{value: string, label: string}>
      */
     public static function options(): array
     {

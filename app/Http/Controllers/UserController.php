@@ -22,7 +22,7 @@ class UserController extends Controller
             ->when($search, function ($query, $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'ILIKE', "%{$search}%")
-                          ->orWhere('email', 'ILIKE', "%{$search}%");
+                        ->orWhere('email', 'ILIKE', "%{$search}%");
                 });
             })
             ->latest()
@@ -61,7 +61,6 @@ class UserController extends Controller
         return redirect()->route('users.index')
             ->with('success', 'Usuário criado com sucesso.');
     }
-
 
     public function edit(User $user): Response
     {

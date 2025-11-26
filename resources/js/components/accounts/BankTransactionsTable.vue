@@ -88,7 +88,6 @@ const {
     initialSortDirectionByColumn,
 });
 
-const normalizeDateValue = (value?: string | null) => value ?? '';
 const isLoading = ref(false);
 
 const submitFilters = () => {
