@@ -142,7 +142,7 @@ class OfxParser
 
             $transactions[] = [
                 'raw_type' => $rawType,
-                'type' => $this->mapTransactionType($rawType),
+                'type' => $this->mapTransactionType($rawType, $amount),
                 'amount' => $amount,
                 'description' => trim($memo),
                 'external_id' => $this->resolveExternalId($fitId, $dateString, $amountString, $memo),
@@ -157,7 +157,7 @@ class OfxParser
                 'bank_id' => $bankId,
                 'institution' => $institution,
                 'currency' => $currency,
-                'name' => 'Conta '.$accountNumber,
+                'name' => 'Conta ' . $accountNumber,
             ],
             'transactions' => $transactions,
         ];
@@ -165,7 +165,7 @@ class OfxParser
 
     protected function tagValue(string $body, string $tag): ?string
     {
-        if (preg_match('/<'.$tag.'>\s*([^<]+)\s*<\/'.$tag.'>/i', $body, $matches)) {
+        if (preg_match('/<' . $tag . '>\s*([^<]+)\s*<\/' . $tag . '>/i', $body, $matches)) {
             return trim($matches[1]);
         }
 
@@ -188,7 +188,7 @@ class OfxParser
             'bank_id' => $bankId,
             'institution' => $institution,
             'currency' => $statement->CURDEF ? trim((string) $statement->CURDEF) : 'BRL',
-            'name' => $account?->ACCTID ? 'Conta '.trim((string) $account->ACCTID) : null,
+            'name' => $account?->ACCTID ? 'Conta ' . trim((string) $account->ACCTID) : null,
         ];
     }
 
@@ -201,7 +201,7 @@ class OfxParser
             $rawType = strtolower(trim((string) ($node->TRNTYPE ?? 'debit')));
             $transactions[] = [
                 'raw_type' => $rawType,
-                'type' => $this->mapTransactionType($rawType),
+                'type' => $this->mapTransactionType($rawType, (float) ($node->TRNAMT ?? 0)),
                 'amount' => (float) ($node->TRNAMT ?? 0),
                 'description' => trim((string) ($node->MEMO ?? 'Transação OFX')),
                 'external_id' => $this->externalIdFor($node),
@@ -212,11 +212,20 @@ class OfxParser
         return $transactions;
     }
 
-    protected function mapTransactionType(string $type): string
+    protected function mapTransactionType(string $type, float $amount): string
     {
-        $creditTypes = ['credit', 'dep', 'directdep', 'div', 'int', 'other'];
+        $creditTypes = ['credit', 'dep', 'directdep', 'div', 'int'];
+        $debitTypes = ['debit', 'payment', 'pos', 'atm', 'check', 'wd', 'withdrawal'];
 
-        return in_array($type, $creditTypes, true) ? 'credit' : 'debit';
+        if (in_array($type, $creditTypes, true)) {
+            return 'credit';
+        }
+
+        if (in_array($type, $debitTypes, true)) {
+            return 'debit';
+        }
+
+        return $amount >= 0 ? 'credit' : 'debit';
     }
 
     protected function parseDate(?string $value): Carbon
@@ -277,7 +286,7 @@ class OfxParser
             $memo
         );
 
-        return $fitId.'-'.md5($payload);
+        return $fitId . '-' . md5($payload);
     }
 
     protected function fallbackExternalId(string $date, float|string $amount, string $memo): string
@@ -289,6 +298,6 @@ class OfxParser
             $memo
         );
 
-        return Str::uuid().'-'.md5($payload);
+        return Str::uuid() . '-' . md5($payload);
     }
 }

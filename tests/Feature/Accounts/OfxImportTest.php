@@ -141,6 +141,30 @@ it('imports OFX files from Nubank credit card statements', function () {
     ]);
 });
 
+it('maps OTHER type to debit when amount is negative', function () {
+    $user = User::factory()->create();
+    actingAs($user);
+
+    $file = UploadedFile::fake()->createWithContent('other-negative.ofx', sampleOtherNegativeContent());
+
+    $this->post(route('accounts.import-ofx'), [
+        'ofx_file' => $file,
+    ])->assertRedirect(route('accounts.index'));
+
+    $account = BankAccount::where('user_id', $user->id)
+        ->where('account_number', 'OTHER001')
+        ->first();
+
+    expect($account)->not->toBeNull();
+
+    $this->assertDatabaseHas('bank_transactions', [
+        'bank_account_id' => $account->id,
+        'external_id' => '010472',
+        'type' => 'debit',
+        'description' => 'DEBITO VISA ELECTRON BRASIL        29/11 FrutaGurtFrozen',
+    ]);
+});
+
 it('imports Nubank OFX files with duplicated FITIDs by hashing date and amount', function () {
     $user = User::factory()->create();
     actingAs($user);
@@ -350,6 +374,55 @@ NEWFILEUID:NONE
 </CCSTMTRS>
 </CCSTMTTRNRS>
 </CREDITCARDMSGSRSV1>
+</OFX>
+OFX;
+}
+
+function sampleOtherNegativeContent(): string
+{
+    return <<<'OFX'
+OFXHEADER:100
+DATA:OFXSGML
+VERSION:102
+SECURITY:NONE
+ENCODING:USASCII
+CHARSET:1252
+COMPRESSION:NONE
+OLDFILEUID:NONE
+NEWFILEUID:NONE
+
+<OFX>
+  <SIGNONMSGSRSV1>
+    <SONRS>
+      <FI>
+        <ORG>Banco Codex</ORG>
+        <FID>321</FID>
+      </FI>
+    </SONRS>
+  </SIGNONMSGSRSV1>
+  <BANKMSGSRSV1>
+    <STMTTRNRS>
+      <STMTRS>
+        <CURDEF>BRL</CURDEF>
+        <BANKACCTFROM>
+          <BANKID>321</BANKID>
+          <ACCTID>OTHER001</ACCTID>
+          <ACCTTYPE>CHECKING</ACCTTYPE>
+        </BANKACCTFROM>
+        <BANKTRANLIST>
+          <STMTTRN>
+            <TRNTYPE>OTHER</TRNTYPE>
+            <DTPOSTED>20251201000000[-3:GMT]</DTPOSTED>
+            <TRNAMT>-46.00</TRNAMT>
+            <FITID>010472</FITID>
+            <CHECKNUM>010472</CHECKNUM>
+            <PAYEEID>0</PAYEEID>
+            <MEMO>DEBITO VISA ELECTRON BRASIL        29/11 FrutaGurtFrozen</MEMO>
+          </STMTTRN>
+        </BANKTRANLIST>
+      </STMTRS>
+    </STMTTRNRS>
+  </BANKMSGSRSV1>
 </OFX>
 OFX;
 }
