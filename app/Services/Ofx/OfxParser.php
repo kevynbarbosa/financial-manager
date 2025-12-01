@@ -9,8 +9,14 @@ use SimpleXMLElement;
 
 class OfxParser
 {
+    /**
+     * @var array<string, int>
+     */
+    protected array $fitIdOccurrences = [];
+
     public function parse(string $contents): array
     {
+        $this->fitIdOccurrences = [];
         $body = $this->extractXmlBody($contents);
         $body = $this->escapeInvalidEntities($body);
         $normalized = $this->normalizeOfx($body);
@@ -132,13 +138,14 @@ class OfxParser
             $memo = $this->tagValue($chunk, 'MEMO') ?? 'Transação OFX';
             $fitId = $this->tagValue($chunk, 'FITID') ?? '';
             $dateString = $this->tagValue($chunk, 'DTPOSTED') ?? '';
+            $amountString = $this->tagValue($chunk, 'TRNAMT') ?? '0';
 
             $transactions[] = [
                 'raw_type' => $rawType,
                 'type' => $this->mapTransactionType($rawType),
                 'amount' => $amount,
                 'description' => trim($memo),
-                'external_id' => $this->externalIdFromRaw($fitId, $dateString, $amount, $memo),
+                'external_id' => $this->resolveExternalId($fitId, $dateString, $amountString, $memo),
                 'occurred_at' => $this->parseDate($dateString),
             ];
         }
@@ -163,24 +170,6 @@ class OfxParser
         }
 
         return null;
-    }
-
-    protected function externalIdFromRaw(string $fitId, string $date, float|string $amount, string $memo): string
-    {
-        $fitId = trim($fitId);
-
-        if ($fitId !== '') {
-            return $fitId;
-        }
-
-        $payload = sprintf(
-            '%s|%s|%s',
-            $date !== '' ? $date : now()->format('YmdHis'),
-            (string) $amount,
-            trim($memo)
-        );
-
-        return Str::uuid().'-'.md5($payload);
     }
 
     protected function parseAccount(SimpleXMLElement $xml, SimpleXMLElement $statement): array
@@ -252,16 +241,52 @@ class OfxParser
     protected function externalIdFor(SimpleXMLElement $node): string
     {
         $fitId = trim((string) ($node->FITID ?? ''));
+        $date = trim((string) ($node->DTPOSTED ?? ''));
+        $amount = trim((string) ($node->TRNAMT ?? '0'));
+        $memo = trim((string) ($node->MEMO ?? ''));
 
-        if ($fitId !== '') {
+        return $this->resolveExternalId($fitId, $date, $amount, $memo);
+    }
+
+    protected function resolveExternalId(string $fitId, string $date, float|string $amount, string $memo): string
+    {
+        $fitId = trim($fitId);
+        $date = trim($date);
+        $memo = trim($memo);
+
+        if ($fitId === '') {
+            return $this->fallbackExternalId($date, $amount, $memo);
+        }
+
+        $this->fitIdOccurrences[$fitId] = ($this->fitIdOccurrences[$fitId] ?? 0) + 1;
+
+        if ($this->fitIdOccurrences[$fitId] === 1) {
             return $fitId;
         }
 
+        return $this->hashedExternalId($fitId, $date, $amount, $memo);
+    }
+
+    protected function hashedExternalId(string $fitId, string $date, float|string $amount, string $memo): string
+    {
+        $payload = sprintf(
+            '%s|%s|%s|%s',
+            $fitId,
+            $date !== '' ? $date : now()->format('YmdHis'),
+            (string) $amount,
+            $memo
+        );
+
+        return $fitId.'-'.md5($payload);
+    }
+
+    protected function fallbackExternalId(string $date, float|string $amount, string $memo): string
+    {
         $payload = sprintf(
             '%s|%s|%s',
-            (string) ($node->DTPOSTED ?? now()->format('YmdHis')),
-            (string) ($node->TRNAMT ?? '0'),
-            trim((string) ($node->MEMO ?? ''))
+            $date !== '' ? $date : now()->format('YmdHis'),
+            (string) $amount,
+            $memo
         );
 
         return Str::uuid().'-'.md5($payload);
