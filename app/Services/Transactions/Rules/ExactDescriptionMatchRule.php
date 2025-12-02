@@ -17,7 +17,7 @@ class ExactDescriptionMatchRule implements TransactionCategoryRuleInterface
             ->join('bank_accounts', 'bank_transactions.bank_account_id', '=', 'bank_accounts.id')
             ->join('transaction_categories', 'bank_transactions.transaction_category_id', '=', 'transaction_categories.id')
             ->where('bank_accounts.user_id', $user->id)
-            ->whereRaw("LOWER(REGEXP_REPLACE(TRIM(bank_transactions.description), '\\\\s+', ' ', 'g')) = ?", [$normalized])
+            ->whereRaw("LOWER(REGEXP_REPLACE(TRIM(bank_transactions.description), '\\\\s+', ' ')) = ?", [$normalized])
             ->orderByDesc('bank_transactions.occurred_at')
             ->orderByDesc('bank_transactions.id')
             ->first();

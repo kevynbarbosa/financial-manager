@@ -18,7 +18,7 @@ class RoleController extends Controller
 
         $roles = Role::withCount('users')
             ->when($search, function ($query, $search) {
-                $query->where('display_name', 'ILIKE', "%{$search}%");
+                $query->where('display_name', 'like', "%{$search}%");
             })
             ->latest()
             ->paginate(15)

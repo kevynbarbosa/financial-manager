@@ -45,7 +45,7 @@ class BulkAssignTransactionCategory
 
         if ($validated['match_type'] === 'exact') {
             $transactions->whereRaw(
-                "LOWER(REGEXP_REPLACE(TRIM(description), '\\s+', ' ', 'g')) = ?",
+                "LOWER(REGEXP_REPLACE(TRIM(description), '\\\\s+', ' ')) = ?",
                 [DescriptionNormalizer::normalize($validated['term'])]
             );
         } else {
