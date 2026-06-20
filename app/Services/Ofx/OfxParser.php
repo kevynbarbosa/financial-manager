@@ -83,7 +83,6 @@ class OfxParser
             | LIBXML_NONET
             | LIBXML_PARSEHUGE
             | LIBXML_NOCDATA;
-        // | LIBXML_RECOVER;
 
         $xml = simplexml_load_string($body, SimpleXMLElement::class, $flags);
 
